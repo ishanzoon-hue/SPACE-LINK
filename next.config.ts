@@ -1,13 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // TypeScript වැරදි තිබුණත් Build එක දිගටම කරගෙන යන්න ඉඩ දෙන්න
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // ESLint වැරදි තිබුණත් Build එකට බාධා නොකරන්න
-    ignoreDuringBuilds: true,
-  },
+  // Build එකේදී Memory (RAM) එක පිරෙන එක නවත්වන්න මේක අනිවාර්යයෙන්ම දාන්න
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;
