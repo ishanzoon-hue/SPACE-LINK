@@ -1,0 +1,110 @@
+'use client'
+
+import { formatDistanceToNow } from 'date-fns'
+import { useState } from 'react'
+import Image from 'next/image'
+import { createClient } from '@/utils/supabase/client'
+import CommentSection from './CommentSection'
+
+export default function PostCard({ post, currentUserId }: { post: any, currentUserId?: string }) {
+    const [likesCount, setLikesCount] = useState(post.likes?.[0]?.count || 0)
+    const [commentsCount, setCommentsCount] = useState(post.comments?.[0]?.count || 0)
+    const [showComments, setShowComments] = useState(false)
+    const [isLiked, setIsLiked] = useState(
+        post.likes?.some((like: any) => like.user_id === currentUserId)
+    )
+    const supabase = createClient()
+
+    async function handleLike() {
+        if (!currentUserId) return
+
+        if (isLiked) {
+            setLikesCount((prev: number) => prev - 1)
+            setIsLiked(false)
+            await supabase.from('likes').delete().match({ post_id: post.id, user_id: currentUserId })
+        } else {
+            setLikesCount((prev: number) => prev + 1)
+            setIsLiked(true)
+            await supabase.from('likes').insert({ post_id: post.id, user_id: currentUserId })
+            if (post.author.id !== currentUserId) {
+                await supabase.from('notifications').insert({
+                    user_id: post.author.id,
+                    type: 'like',
+                    from_user_id: currentUserId,
+                    post_id: post.id
+                })
+            }
+        }
+    }
+
+    return (
+        <div className="bg-white dark:bg-[#0F172A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transform transition-all hover:shadow-md">
+            <div className="p-5">
+                <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-spl-blue bg-opacity-10 flex items-center justify-center text-spl-blue font-bold overflow-hidden relative">
+                        {post.author.avatar_url ? (
+                            <Image src={post.author.avatar_url} alt="avatar" fill className="object-cover" />
+                        ) : (
+                            post.author.display_name?.charAt(0).toUpperCase() || '?'
+                        )}
+                    </div>
+                    <div>
+                        <p className="font-semibold text-spl-black dark:text-gray-200">{post.author.display_name}</p>
+                        <p className="text-xs text-spl-gray-dark">
+                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                        </p>
+                    </div>
+                </div>
+
+                <p className="text-spl-black dark:text-gray-300 mb-4 whitespace-pre-wrap">{post.content}</p>
+
+                {post.image_url && (
+                    <div className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden mb-4">
+                        <Image
+                            src={
+                                post.image_url.startsWith('http')
+                                    ? post.image_url
+                                    : supabase.storage.from('post-images').getPublicUrl(post.image_url).data.publicUrl
+                            }
+                            alt="Post Image"
+                            fill
+                            className="object-cover"
+                            unoptimized={true}
+                        />
+                    </div>
+                )}
+
+                <div className="flex items-center space-x-6 pt-4 border-t border-gray-100 dark:border-gray-800 mt-2">
+                    <button
+                        onClick={handleLike}
+                        disabled={!currentUserId}
+                        className={`flex items-center space-x-1.5 focus:outline-none transition-colors ${isLiked ? 'text-spl-green' : 'text-spl-gray-dark hover:text-spl-blue'}`}
+                    >
+                        <svg className={`w-5 h-5 ${isLiked ? 'fill-current' : 'fill-none stroke-current stroke-2'}`} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                        </svg>
+                        <span className="text-sm font-medium">{likesCount} Likes</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowComments(!showComments)}
+                        className="flex items-center space-x-1.5 text-spl-gray-dark hover:text-spl-blue transition-colors focus:outline-none"
+                    >
+                        <svg className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+                        </svg>
+                        <span className="text-sm font-medium">{commentsCount} Comments</span>
+                    </button>
+                </div>
+
+                {showComments && (
+                    <CommentSection
+                        postId={post.id}
+                        currentUserId={currentUserId}
+                        onCommentAdded={() => setCommentsCount((prev: number) => prev + 1)}
+                    />
+                )}
+            </div>
+        </div>
+    )
+}
