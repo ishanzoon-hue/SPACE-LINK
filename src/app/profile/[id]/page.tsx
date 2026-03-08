@@ -54,7 +54,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-spl-green bg-opacity-10 flex items-center justify-center text-spl-green font-bold text-4xl overflow-hidden relative shrink-0">
                         {profile.avatar_url ? (
-                            <Image src={profile.avatar_url} alt="Profile Picture" fill className="object-cover" />
+                            <<Image 
+  src={profile.avatar_url} 
+  alt="Profile Picture" 
+  fill 
+  className="object-cover" 
+  unoptimized // මෙන්න මේක අලුතින් එකතු කරන්න
+/>>
                         ) : (
                             profile.display_name?.charAt(0).toUpperCase() || 'U'
                         )}
