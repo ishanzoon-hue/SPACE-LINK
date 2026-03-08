@@ -3,8 +3,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Build එකේදී Memory (RAM) එක පිරෙන එක නවත්වන්න මේක අනිවාර්යයෙන්ම දාන්න
-  productionBrowserSourceMaps: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'vwqdsnqqzoaczvokim.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
