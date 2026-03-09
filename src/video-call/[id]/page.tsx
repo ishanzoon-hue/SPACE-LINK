@@ -9,7 +9,10 @@ export default function VideoCallPage({ params }: { params: Promise<{ id: string
     const resolvedParams = use(params);
     const roomID = resolvedParams.id;
 
-    const myMeeting = async (element: HTMLDivElement) => {
+    // මෙතන තමයි වෙනස් කළේ (async අයින් කළා සහ null චෙක් එකක් දැම්මා)
+    const myMeeting = (element: HTMLDivElement | null) => {
+        if (!element) return;
+
         // වැදගත්: ඔයාගේ ZegoCloud AppID සහ ServerSecret මෙතනට දාන්න
         const appID = 123456789; // මෙතනට ඔයාගේ ID එක දාන්න
         const serverSecret = "ඔයාගේ_සර්වර්_සීක්‍රට්_එක_මෙතනට"; 
