@@ -4,7 +4,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'ඔයාගේ-supabase-project-id.supabase.co', // ඔයාගේ Supabase Project එකේ URL එක මෙතනට දෙන්න
+        hostname: 'vwqdsnqqszoaczvokirn.supabase.co', // ඔයාගේ නිවැරදි Supabase ලින්ක් එක
       },
       // Google වලින් ලොග් වෙනවා නම් (Google Auth) මේකත් ඕනේ වෙයි
       {
