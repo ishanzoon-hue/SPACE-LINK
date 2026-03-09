@@ -9,20 +9,25 @@ export default function VideoCallPage({ params }: { params: Promise<{ id: string
     const resolvedParams = use(params);
     const roomID = resolvedParams.id;
 
-    // මෙතන තමයි වෙනස් කළේ (async අයින් කළා සහ null චෙක් එකක් දැම්මා)
     const myMeeting = (element: HTMLDivElement | null) => {
         if (!element) return;
 
-        // වැදගත්: ඔයාගේ ZegoCloud AppID සහ ServerSecret මෙතනට දාන්න
-        const appID = 123456789; // මෙතනට ඔයාගේ ID එක දාන්න
-        const serverSecret = "ඔයාගේ_සර්වර්_සීක්‍රට්_එක_මෙතනට"; 
+        // දැන් රහස්‍ය කේත තියෙන්නේ ආරක්ෂිතව .env ෆයිල් එක ඇතුළේ
+        const appID = Number(process.env.NEXT_PUBLIC_ZEGO_APP_ID); 
+        const serverSecret = process.env.NEXT_PUBLIC_ZEGO_SERVER_SECRET as string; 
         
+        // App ID එක හරි Secret එක හරි නැත්නම් කෝල් එක පටන් ගන්නේ නැහැ
+        if (!appID || !serverSecret) {
+            console.error("ZegoCloud credentials are missing!");
+            return;
+        }
+
         const kitToken =  ZegoUIKitPrebuilt.generateKitTokenForTest(
             appID, 
             serverSecret, 
             roomID,  
             Date.now().toString(),  
-            "Ishan" // මෙතනට ඕනෑම නමක් දෙන්න පුළුවන්
+            "Ishan" 
         );
 
         const zp = ZegoUIKitPrebuilt.create(kitToken);
