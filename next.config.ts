@@ -1,19 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'vwqdsnqqszoaczvokirn.supabase.co', // මේක අකුරක්වත් වෙනස් කරන්න එපා
-        port: '',
-        pathname: '/storage/v1/object/public/**',
+        hostname: 'ඔයාගේ-supabase-project-id.supabase.co', // ඔයාගේ Supabase Project එකේ URL එක මෙතනට දෙන්න
       },
+      // Google වලින් ලොග් වෙනවා නම් (Google Auth) මේකත් ඕනේ වෙයි
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', 
+      }
     ],
-    unoptimized: true, // පින්තූර පේන්න මේක අනිවාර්යයි
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

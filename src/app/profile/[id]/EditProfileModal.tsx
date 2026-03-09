@@ -42,14 +42,14 @@ export default function EditProfileModal({ profile }: { profile: any }) {
 
                 // 1. මෙතන 'AVATARS' කියලා කැපිටල් කළා
                 const { error: uploadError } = await supabase.storage
-                    .from('AVATARS') 
+                    .from('avatars') 
                     .upload(`${profile.id}/${fileName}`, imageFile)
 
                 if (uploadError) throw uploadError
 
-                // 2. මෙතනත් 'AVATARS' කියලා කැපිටල් කළා
+                // 2. මෙතනත් '' කියලා කැපිටල් කළා
                 const { data: { publicUrl } } = supabase.storage
-                    .from('AVATARS')
+                    .from('avatars')
                     .getPublicUrl(`${profile.id}/${fileName}`)
 
                 avatar_url = publicUrl
@@ -99,7 +99,11 @@ export default function EditProfileModal({ profile }: { profile: any }) {
                                 <div className="w-24 h-24 rounded-full bg-spl-green bg-opacity-10 flex items-center justify-center text-spl-green font-bold text-3xl overflow-hidden relative border-2 border-gray-100">
                                     {imagePreview ? (
                                         // 3. මෙතන unoptimized={true} එකතු කළා
-                                        <Image src={imagePreview} alt="Avatar Preview" fill className="object-cover" unoptimized={true} />
+                                        <img 
+  src={imagePreview} 
+  alt="Avatar Preview" 
+  className="w-full h-full object-cover" 
+/>
                                     ) : (
                                         displayName?.charAt(0).toUpperCase() || 'U'
                                     )}
