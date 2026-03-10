@@ -4,20 +4,24 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
+import { Trash2, Loader2 } from 'lucide-react' // අයිකන් ටික Import කරගන්න
 
 export default function CommentSection({
     postId,
     currentUserId,
-    onCommentAdded
+    onCommentAdded,
+    onCommentDeleted // පෝස්ට් එකේ count එක අඩු කරන්න මේක පාවිච්චි කරන්න පුළුවන්
 }: {
     postId: string,
     currentUserId?: string,
-    onCommentAdded: () => void
+    onCommentAdded: () => void,
+    onCommentDeleted?: () => void // මේක Optional
 }) {
     const [comments, setComments] = useState<any[]>([])
     const [newComment, setNewComment] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [deletingId, setDeletingId] = useState<string | null>(null) // මකන ගමන් ඉන්න කමෙන්ට් එකේ ID එක
     const supabase = createClient()
 
     useEffect(() => {
@@ -68,6 +72,33 @@ export default function CommentSection({
         }
     }
 
+    // --- කමෙන්ට් එක මකන කොටස ---
+    const handleDelete = async (commentId: string) => {
+        if (!confirm("Are you sure you want to delete this comment?")) return
+
+        setDeletingId(commentId)
+        try {
+            const { error } = await supabase
+                .from('comments')
+                .delete()
+                .eq('id', commentId)
+
+            if (error) throw error
+
+            // UI එකෙන් කමෙන්ට් එක අයින් කිරීම
+            setComments(prev => prev.filter(c => c.id !== commentId))
+            
+            // පෝස්ට් එකේ කමෙන්ට් ගණන අඩු කරන්න දැනුම් දීම
+            if (onCommentDeleted) onCommentDeleted()
+            
+        } catch (err) {
+            console.error('Error deleting comment:', err)
+            alert('Could not delete comment.')
+        } finally {
+            setDeletingId(null)
+        }
+    }
+
     return (
         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
             {isLoading ? (
@@ -78,7 +109,7 @@ export default function CommentSection({
                         <p className="text-sm text-center text-spl-gray-dark py-2">No comments yet. Be the first to share your thoughts!</p>
                     ) : (
                         comments.map(comment => (
-                            <div key={comment.id} className="flex space-x-3 bg-spl-gray dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 p-3 rounded-lg">
+                            <div key={comment.id} className="group flex space-x-3 bg-spl-gray dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 p-3 rounded-lg relative">
                                 <div className="w-8 h-8 rounded-full bg-spl-blue bg-opacity-10 flex items-center justify-center text-spl-blue font-bold overflow-hidden relative shrink-0">
                                     {comment.author?.avatar_url ? (
                                         <Image src={comment.author.avatar_url} alt="avatar" fill className="object-cover" unoptimized={true} />
@@ -87,11 +118,28 @@ export default function CommentSection({
                                     )}
                                 </div>
                                 <div className="flex-1">
-                                    <div className="flex items-baseline space-x-2">
-                                        <span className="font-semibold text-sm text-spl-black dark:text-gray-200">{comment.author?.display_name}</span>
-                                        <span className="text-xs text-spl-gray-dark">
-                                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                                        </span>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-baseline space-x-2">
+                                            <span className="font-semibold text-sm text-spl-black dark:text-gray-200">{comment.author?.display_name}</span>
+                                            <span className="text-xs text-spl-gray-dark">
+                                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                                            </span>
+                                        </div>
+
+                                        {/* --- මකන බටන් එක (තමන්ගේ කමෙන්ට් එකක් නම් විතරයි පේන්නේ) --- */}
+                                        {currentUserId === comment.user_id && (
+                                            <button 
+                                                onClick={() => handleDelete(comment.id)}
+                                                disabled={deletingId === comment.id}
+                                                className="text-gray-400 hover:text-red-500 transition-opacity opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                                            >
+                                                {deletingId === comment.id ? (
+                                                    <Loader2 size={14} className="animate-spin" />
+                                                ) : (
+                                                    <Trash2 size={14} />
+                                                )}
+                                            </button>
+                                        )}
                                     </div>
                                     <p className="text-sm text-spl-black dark:text-gray-300 mt-1 whitespace-pre-wrap">{comment.content}</p>
                                 </div>
