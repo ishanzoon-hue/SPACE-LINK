@@ -5,6 +5,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/utils/supabase/client'
 import CommentSection from './CommentSection'
+import PostPresence from './PostPresence' // අලුත් component එක import කළා
 
 export default function PostCard({ post, currentUserId }: { post: any, currentUserId?: string }) {
     const [likesCount, setLikesCount] = useState(post.likes?.[0]?.count || 0)
@@ -40,26 +41,32 @@ export default function PostCard({ post, currentUserId }: { post: any, currentUs
     return (
         <div className="bg-white dark:bg-[#0F172A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transform transition-all hover:shadow-md">
             <div className="p-5">
-                <div className="flex items-center space-x-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-spl-blue bg-opacity-10 flex items-center justify-center text-spl-blue font-bold overflow-hidden relative">
-                        {post.author.avatar_url ? (
-                            <Image src={post.author.avatar_url} alt="avatar" fill className="object-cover" />
-                        ) : (
-                            post.author.display_name?.charAt(0).toUpperCase() || '?'
-                        )}
+                {/* Header කොටස - මෙතනට තමයි Live Viewing එක දැම්මේ */}
+                <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-spl-blue bg-opacity-10 flex items-center justify-center text-spl-blue font-bold overflow-hidden relative">
+                            {post.author.avatar_url ? (
+                                <Image src={post.author.avatar_url} alt="avatar" fill className="object-cover" unoptimized={true} />
+                            ) : (
+                                post.author.display_name?.charAt(0).toUpperCase() || '?'
+                            )}
+                        </div>
+                        <div>
+                            <p className="font-semibold text-spl-black dark:text-gray-200">{post.author.display_name}</p>
+                            <p className="text-xs text-spl-gray-dark">
+                                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="font-semibold text-spl-black dark:text-gray-200">{post.author.display_name}</p>
-                        <p className="text-xs text-spl-gray-dark">
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                        </p>
-                    </div>
+
+                    {/* --- මෙන්න සුපිරි ලයිව් කෑල්ල! --- */}
+                    <PostPresence postId={post.id} />
                 </div>
 
                 <p className="text-spl-black dark:text-gray-300 mb-4 whitespace-pre-wrap">{post.content}</p>
 
                 {post.image_url && (
-                    <div className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden mb-4">
+                    <div className="relative w-full h-64 md:h-96 rounded-lg overflow-hidden mb-4 border border-gray-50 dark:border-gray-800">
                         <Image
                             src={
                                 post.image_url.startsWith('http')
@@ -102,6 +109,7 @@ export default function PostCard({ post, currentUserId }: { post: any, currentUs
                         postId={post.id}
                         currentUserId={currentUserId}
                         onCommentAdded={() => setCommentsCount((prev: number) => prev + 1)}
+                        onCommentDeleted={() => setCommentsCount((prev) => prev - 1)}
                     />
                 )}
             </div>
