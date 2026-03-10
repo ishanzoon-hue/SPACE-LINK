@@ -5,16 +5,58 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/utils/supabase/client'
 import CommentSection from './CommentSection'
-import PostPresence from './PostPresence' // අලුත් component එක import කළා
+import PostPresence from './PostPresence'
+import { Trash2, Loader2 } from 'lucide-react' // අයිකන් Import කළා
 
 export default function PostCard({ post, currentUserId }: { post: any, currentUserId?: string }) {
     const [likesCount, setLikesCount] = useState(post.likes?.[0]?.count || 0)
     const [commentsCount, setCommentsCount] = useState(post.comments?.[0]?.count || 0)
     const [showComments, setShowComments] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false) // මකන ගමන්ද කියලා බලන්න
     const [isLiked, setIsLiked] = useState(
         post.likes?.some((like: any) => like.user_id === currentUserId)
     )
     const supabase = createClient()
+
+    // --- පෝස්ට් එක මකා දැමීමේ Function එක ---
+    async function handleDeletePost() {
+        if (!confirm("මෙම පෝස්ට් එක මකා දැමීමට ඔබට විශ්වාසද?")) return
+
+        setIsDeleting(true)
+        try {
+            // 1. පින්තූරයක් තිබේ නම් එය Storage එකෙන් මකමු
+            if (post.image_url) {
+                // URL එකෙන් පින්තූරයේ නම (filename) වෙන් කරගැනීම
+                const parts = post.image_url.split('/')
+                const fileName = parts[parts.length - 1]
+
+                if (fileName) {
+                    const { error: storageError } = await supabase.storage
+                        .from('post-images') // ඔයාගේ Bucket නම මෙතනට දෙන්න
+                        .remove([fileName])
+                    
+                    if (storageError) console.error("Storage delete error:", storageError)
+                }
+            }
+
+            // 2. Database එකෙන් පෝස්ට් එක මකා දැමීම
+            const { error: dbError } = await supabase
+                .from('posts')
+                .delete()
+                .eq('id', post.id)
+
+            if (dbError) throw dbError
+
+            // සාර්ථක නම් පේජ් එක Refresh කිරීම
+            window.location.reload()
+
+        } catch (error) {
+            console.error('Error deleting post:', error)
+            alert("පෝස්ට් එක මකා දැමීමට නොහැකි විය.")
+        } finally {
+            setIsDeleting(false)
+        }
+    }
 
     async function handleLike() {
         if (!currentUserId) return
@@ -41,7 +83,6 @@ export default function PostCard({ post, currentUserId }: { post: any, currentUs
     return (
         <div className="bg-white dark:bg-[#0F172A] rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden transform transition-all hover:shadow-md">
             <div className="p-5">
-                {/* Header කොටස - මෙතනට තමයි Live Viewing එක දැම්මේ */}
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full bg-spl-blue bg-opacity-10 flex items-center justify-center text-spl-blue font-bold overflow-hidden relative">
@@ -59,8 +100,24 @@ export default function PostCard({ post, currentUserId }: { post: any, currentUs
                         </div>
                     </div>
 
-                    {/* --- මෙන්න සුපිරි ලයිව් කෑල්ල! --- */}
-                    <PostPresence postId={post.id} />
+                    <div className="flex items-center gap-3">
+                        <PostPresence postId={post.id} />
+                        
+                        {/* --- මකන බටන් එක (අයිතිකරුට පමණක් පෙනේ) --- */}
+                        {currentUserId === post.user_id && (
+                            <button 
+                                onClick={handleDeletePost}
+                                disabled={isDeleting}
+                                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            >
+                                {isDeleting ? (
+                                    <Loader2 size={18} className="animate-spin" />
+                                ) : (
+                                    <Trash2 size={18} />
+                                )}
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <p className="text-spl-black dark:text-gray-300 mb-4 whitespace-pre-wrap">{post.content}</p>
