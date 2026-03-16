@@ -4,24 +4,24 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
-import { Trash2, Loader2 } from 'lucide-react' // අයිකන් ටික Import කරගන්න
+import { Trash2, Loader2 } from 'lucide-react'
 
 export default function CommentSection({
     postId,
     currentUserId,
     onCommentAdded,
-    onCommentDeleted // පෝස්ට් එකේ count එක අඩු කරන්න මේක පාවිච්චි කරන්න පුළුවන්
+    onCommentDeleted
 }: {
     postId: string,
     currentUserId?: string,
     onCommentAdded: () => void,
-    onCommentDeleted?: () => void // මේක Optional
+    onCommentDeleted?: () => void
 }) {
     const [comments, setComments] = useState<any[]>([])
     const [newComment, setNewComment] = useState('')
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [deletingId, setDeletingId] = useState<string | null>(null) // මකන ගමන් ඉන්න කමෙන්ට් එකේ ID එක
+    const [deletingId, setDeletingId] = useState<string | null>(null)
     const supabase = createClient()
 
     useEffect(() => {
@@ -72,7 +72,6 @@ export default function CommentSection({
         }
     }
 
-    // --- කමෙන්ට් එක මකන කොටස ---
     const handleDelete = async (commentId: string) => {
         if (!confirm("Are you sure you want to delete this comment?")) return
 
@@ -85,10 +84,7 @@ export default function CommentSection({
 
             if (error) throw error
 
-            // UI එකෙන් කමෙන්ට් එක අයින් කිරීම
             setComments(prev => prev.filter(c => c.id !== commentId))
-            
-            // පෝස්ට් එකේ කමෙන්ට් ගණන අඩු කරන්න දැනුම් දීම
             if (onCommentDeleted) onCommentDeleted()
             
         } catch (err) {
@@ -98,6 +94,33 @@ export default function CommentSection({
             setDeletingId(null)
         }
     }
+
+    // --- අලුතින් එකතු කරපු Like Function එක ---
+    const handleLike = async (commentId: string) => {
+        if (!currentUserId) {
+            alert("කරුණාකර Like කිරීම සඳහා ලොග් වෙන්න.");
+            return; 
+        }
+
+        try {
+            const response = await fetch('/api/comments/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    commentId: commentId, 
+                    userId: currentUserId  
+                }), 
+            });
+
+            const data = await response.json();
+            console.log("Like response:", data.message);
+            
+        } catch (error) {
+            console.error("Like කිරීමේදී දෝෂයක්:", error);
+        }
+    };
 
     return (
         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
@@ -126,7 +149,6 @@ export default function CommentSection({
                                             </span>
                                         </div>
 
-                                        {/* --- මකන බටන් එක (තමන්ගේ කමෙන්ට් එකක් නම් විතරයි පේන්නේ) --- */}
                                         {currentUserId === comment.user_id && (
                                             <button 
                                                 onClick={() => handleDelete(comment.id)}
@@ -142,6 +164,17 @@ export default function CommentSection({
                                         )}
                                     </div>
                                     <p className="text-sm text-spl-black dark:text-gray-300 mt-1 whitespace-pre-wrap">{comment.content}</p>
+                                    
+                                    {/* --- අලුතින් එකතු කරපු Like Button එක --- */}
+                                    <div className="flex items-center gap-4 mt-2">
+                                        <button 
+                                            onClick={() => handleLike(comment.id)}
+                                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-500 transition-colors"
+                                        >
+                                            👍 Like
+                                        </button>
+                                    </div>
+
                                 </div>
                             </div>
                         ))
