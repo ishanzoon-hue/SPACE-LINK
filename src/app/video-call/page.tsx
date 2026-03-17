@@ -1,89 +1,72 @@
 'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Video, UserPlus, PhoneOutgoing } from 'lucide-react';
+import { useEffect, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 
-export default function VideoCallLanding() {
-    const [roomCode, setRoomCode] = useState('');
-    const [targetUserId, setTargetUserId] = useState(''); // Call කරන්න ඕන කෙනාගේ ID එක සඳහා
-    const router = useRouter();
+export default function VideoCallPage() {
+    const { id } = useParams() // URL එකේ තියෙන ID එක ගන්නවා
+    const router = useRouter()
+    const jitsiContainerRef = useRef<HTMLDivElement>(null)
 
-    const startNewMeeting = () => {
-        // අහඹු ID එකක් හදනවා (උදා: abc123)
-        const randomId = Math.random().toString(36).substring(2, 9);
-        router.push(`/video-call/${randomId}`);
-    };
+    useEffect(() => {
+        // Jitsi Script එක load කිරීම
+        const script = document.createElement('script')
+        script.src = 'https://8x8.vc/external_api.js'
+        script.async = true
+        document.body.appendChild(script)
 
-    const joinMeeting = () => {
-        if (roomCode.trim()) {
-            router.push(`/video-call/${roomCode.trim()}`);
+        script.onload = () => {
+            if (window.JitsiMeetExternalAPI && jitsiContainerRef.current) {
+                const domain = '8x8.vc'
+                const options = {
+                    roomName: `vpaas-magic-cookie-38d5e8/${id}`, // රූම් එකේ නම
+                    width: '100%',
+                    height: '100%',
+                    parentNode: jitsiContainerRef.current,
+                    interfaceConfigOverwrite: {
+                        TILE_VIEW_MAX_COLUMNS: 2,
+                    },
+                    configOverwrite: {
+                        startWithAudioMuted: false,
+                        startWithVideoMuted: false,
+                    },
+                }
+                const api = new window.JitsiMeetExternalAPI(domain, options)
+
+                // කෝල් එක ඉවර කළ විට ආපසු හෝම් පේජ් එකට යැවීම
+                api.addEventListener('videoConferenceLeft', () => {
+                    router.push('/')
+                })
+            }
         }
-    };
 
-    // මේක තමයි කෙලින්ම කෙනෙක්ව Call කරන්න පාවිච්චි කරන්නේ
-    const callDirectly = () => {
-        if (targetUserId.trim()) {
-            // ඒ කෙනාගේ ID එකම Room ID එක විදිහට පාවිච්චි කරලා එතනට යනවා
-            router.push(`/video-call/${targetUserId.trim()}`);
+        return () => {
+            document.body.removeChild(script)
         }
-    };
+    }, [id, router])
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
-            <div className="bg-white dark:bg-[#0F172A] p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 max-w-md w-full text-center">
-                <div className="bg-spl-green bg-opacity-10 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                    <Video className="w-10 h-10 text-spl-green" />
-                </div>
-                <h1 className="text-2xl font-bold mb-2 text-spl-black dark:text-white">Video Meeting</h1>
-                <p className="text-gray-500 mb-8 text-sm">Start a new meeting, join one, or call a friend directly.</p>
-                
-                <div className="space-y-6">
-                    {/* අලුත් මීටින් එකක් පටන් ගැනීම */}
-                    <button onClick={startNewMeeting} className="w-full bg-spl-green text-white font-semibold py-3 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2">
-                        <Video className="w-5 h-5" /> Start New Meeting
-                    </button>
-
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100 dark:border-gray-800"></span></div>
-                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-white dark:bg-[#0F172A] px-2 text-gray-400">Or</span></div>
-                    </div>
-
-                    {/* Direct Call - කෙනෙක්ගේ ID එකට කෙලින්ම කෝල් ගැනීම */}
-                    <div className="space-y-2">
-                        <p className="text-left text-xs font-semibold text-gray-400 ml-1">CALL A FRIEND DIRECTLY</p>
-                        <div className="flex items-center gap-2">
-                            <input 
-                                type="text" 
-                                value={targetUserId}
-                                onChange={(e) => setTargetUserId(e.target.value)}
-                                placeholder="Enter Friend's ID" 
-                                className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg py-3 px-4 bg-transparent dark:text-white outline-none focus:border-spl-green"
-                            />
-                            <button onClick={callDirectly} className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors">
-                                <PhoneOutgoing className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* දැනට තියෙන එකකට Join වීම */}
-                    <div className="space-y-2 pt-2">
-                         <p className="text-left text-xs font-semibold text-gray-400 ml-1">JOIN WITH CODE</p>
-                        <div className="flex items-center gap-2">
-                            <input 
-                                type="text" 
-                                value={roomCode}
-                                onChange={(e) => setRoomCode(e.target.value)}
-                                placeholder="Enter Room Code" 
-                                className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg py-3 px-4 bg-transparent dark:text-white outline-none focus:border-gray-400"
-                            />
-                            <button onClick={joinMeeting} className="bg-gray-100 dark:bg-gray-800 py-3 px-6 rounded-lg font-semibold dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                                Join
-                            </button>
-                        </div>
-                    </div>
-                </div>
+        <div className="flex flex-col h-screen bg-black">
+            {/* Header කොටස */}
+            <div className="p-4 bg-gray-900 text-white flex justify-between items-center">
+                <h1 className="font-bold">Elimeno Video Meeting</h1>
+                <button 
+                    onClick={() => router.push('/')}
+                    className="bg-red-500 px-4 py-2 rounded-lg text-sm font-bold"
+                >
+                    Leave Call
+                </button>
             </div>
+
+            {/* වීඩියෝ එක පේන තැන */}
+            <div className="flex-1 w-full overflow-hidden" ref={jitsiContainerRef}></div>
         </div>
-    );
+    )
+}
+
+// Jitsi සඳහා TypeScript interface එකක්
+declare global {
+    interface Window {
+        JitsiMeetExternalAPI: any;
+    }
 }
