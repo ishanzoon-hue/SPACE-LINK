@@ -166,7 +166,7 @@ export default function PostCard({ post, currentUserId }: { post: any, currentUs
                         postId={post.id}
                         currentUserId={currentUserId}
                         onCommentAdded={() => setCommentsCount((prev: number) => prev + 1)}
-                        onCommentDeleted={() => setCommentsCount((prev) => prev - 1)}
+                       onCommentDeleted={() => setCommentsCount((prev: number) => prev - 1)} 
                     />
                 )}
             </div>
