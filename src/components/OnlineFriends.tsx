@@ -1,29 +1,36 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { PhoneOutgoing } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 
 export default function OnlineFriends({ currentUserId }: { currentUserId: string }) {
     const [onlineFriends, setOnlineFriends] = useState<any[]>([])
+    const [myProfile, setMyProfile] = useState<any>(null) // ඔබේ විස්තර තබා ගැනීමට
     const supabase = createClient()
+    const router = useRouter()
 
     useEffect(() => {
         const setupPresence = async () => {
-            // 1. Follow කරන අයගේ ලිස්ට් එක ගන්නවා
-            const { data: following, error: followError } = await supabase
+            // 1. ඔබේ ප්‍රෝෆයිල් විස්තර ලබා ගැනීම (Call එකක් යවන විට ඔබේ නම පෙන්වීමට)
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('display_name, avatar_url')
+                .eq('id', currentUserId)
+                .single()
+            
+            setMyProfile(profile)
+
+            // 2. Follow කරන අයගේ ලිස්ට් එක ගැනීම
+            const { data: following } = await supabase
                 .from('follows')
                 .select('following_id')
                 .eq('follower_id', currentUserId)
 
-            if (followError) {
-                console.error("Follow list error:", followError)
-                return
-            }
-
             const followingIds = following?.map(f => f.following_id) || []
-            console.log("මම Follow කරන අයගේ IDs:", followingIds)
 
-            // 2. Realtime Channel එක
+            // 3. Presence Channel එක
             const channel = supabase.channel('online-users', {
                 config: { presence: { key: currentUserId } }
             })
@@ -31,13 +38,9 @@ export default function OnlineFriends({ currentUserId }: { currentUserId: string
             channel
                 .on('presence', { event: 'sync' }, () => {
                     const state = channel.presenceState()
-                    console.log("දැනට ඔන්ලයින් ඉන්න මුළු සෙට් එක:", state)
-
                     const onlineList: any[] = []
 
                     Object.keys(state).forEach((userId) => {
-                        // වැදගත්: මෙතනදී අපි Follow කරන අය විතරක් තෝරනවා
-                        // පරීක්ෂා කිරීමට නම්: (followingIds.includes(userId) || userId === currentUserId)
                         if (followingIds.includes(userId)) {
                             const userPresence: any = state[userId][0]
                             onlineList.push({
@@ -51,12 +54,6 @@ export default function OnlineFriends({ currentUserId }: { currentUserId: string
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        const { data: profile } = await supabase
-                            .from('profiles')
-                            .select('display_name, avatar_url')
-                            .eq('id', currentUserId)
-                            .single()
-
                         await channel.track({
                             name: profile?.display_name || 'User',
                             avatar: profile?.avatar_url
@@ -69,37 +66,74 @@ export default function OnlineFriends({ currentUserId }: { currentUserId: string
 
         const channelPromise = setupPresence()
         return () => { channelPromise.then(c => c && c.unsubscribe()) }
-    }, [currentUserId])
+    }, [currentUserId, supabase])
 
-    // ලිස්ට් එක හිස් නම් පෙන්නන්න දෙයක් නැහැ
+    // --- පියවර 1: කෝල් එක පටන් ගැනීම සහ රිංගින් මැසේජ් එක යැවීම ---
+    const handleStartCall = async (friendId: string) => {
+        // යාළුවාගේ ID එකට අදාළ විශේෂ චැනල් එකක් සාදා ගැනීම
+        const callChannel = supabase.channel(`call_${friendId}`);
+
+        await callChannel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                // යාළුවාට 'incoming-call' මැසේජ් එක බ්‍රෝඩ්කාස්ට් කිරීම
+                await callChannel.send({
+                    type: 'broadcast',
+                    event: 'incoming-call',
+                    payload: {
+                        callerId: currentUserId,
+                        callerName: myProfile?.display_name || 'Someone',
+                        callerAvatar: myProfile?.avatar_url,
+                        roomId: currentUserId // ඔබේ ID එකම Room ID එක ලෙස පාවිච්චි වේ
+                    }
+                });
+
+                // පණිවිඩය යැවූ පසු ඔබව කෝල් එකේ පේජ් එකට යොමු කරයි
+                router.push(`/video-call/${currentUserId}`);
+            }
+        });
+    };
+
     if (onlineFriends.length === 0) {
         return (
             <div className="bg-white dark:bg-[#0F172A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
-                <p className="text-xs text-gray-400">No friends online right now.</p>
+                <p className="text-[11px] text-gray-400 text-center">No friends online</p>
             </div>
         )
     }
 
     return (
         <div className="bg-white dark:bg-[#0F172A] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Online Friends</h3>
-            <div className="space-y-4">
+            <h3 className="text-[10px] font-bold text-gray-400 mb-4 uppercase tracking-widest">Active Now</h3>
+            
+            <div className="space-y-2">
                 {onlineFriends.map((friend) => (
-                    <div key={friend.id} className="flex items-center gap-3 group cursor-pointer">
-                        <div className="relative">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 overflow-hidden flex items-center justify-center">
-                                {friend.avatar ? (
-                                    <img src={friend.avatar} alt={friend.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-blue-600 font-bold">{friend.name[0]}</span>
-                                )}
+                    <button 
+                        key={friend.id}
+                        onClick={() => handleStartCall(friend.id)}
+                        className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all group"
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 dark:from-gray-800 dark:to-gray-700 overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-green-500 transition-all">
+                                    {friend.avatar ? (
+                                        <img src={friend.avatar} alt={friend.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-blue-600 dark:text-blue-400 font-bold text-sm">{friend.name[0]}</span>
+                                    )}
+                                </div>
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-[#0F172A] rounded-full"></div>
                             </div>
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-[#0F172A] rounded-full"></div>
+                            
+                            <div className="text-left">
+                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 group-hover:text-green-600 transition-colors">
+                                    {friend.name}
+                                </p>
+                                <p className="text-[10px] text-green-500 font-medium animate-pulse">Available for call</p>
+                            </div>
                         </div>
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200 group-hover:text-blue-500">
-                            {friend.name}
-                        </span>
-                    </div>
+
+                        <PhoneOutgoing className="w-4 h-4 text-gray-300 group-hover:text-green-500 transition-all" />
+                    </button>
                 ))}
             </div>
         </div>
