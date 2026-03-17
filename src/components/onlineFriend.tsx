@@ -14,7 +14,7 @@ export default function OnlineFriends({ currentUserId }: { currentUserId: string
             const { data: following } = await supabase
                 .from('follows')
                 .select('following_id')
-                .eq('follower_id', currentUserId)
+                .eq('follower_id', currentUserId)console.log("Follow කරන අයගේ IDs:", followingIds);
 
             const followingIds = following?.map(f => f.following_id) || []
 
@@ -29,7 +29,7 @@ export default function OnlineFriends({ currentUserId }: { currentUserId: string
                     const onlineList: any[] = []
 
                     // ඔන්ලයින් ඉන්න අයගෙන් අපි Follow කරන අය විතරක් Filter කරනවා
-                    Object.keys(state).forEach((userId) => {
+                    Object.keys(state).forEach((userId) => {console.log("දැනට සයිට් එකේ ඉන්න මුළු සෙට් එක (Presence):", state);
                         if (followingIds.includes(userId)) {
                             const userPresence: any = state[userId][0]
                             onlineList.push({
