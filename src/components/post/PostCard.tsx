@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
+import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-center'
+import { Heart as HeartIcon, MessageCircle as MessageIcon, Share2 as ShareIcon, MoreHorizontal as MoreIcon } from 'lucide-react'
 
 interface PostCardProps {
   post: any;
   currentUserId?: string;
-  themeColor?: string; // 👈 Vibe color එක ගන්න අලුත් Prop එක
+  themeColor?: string;
 }
 
 export default function PostCard({ post, currentUserId, themeColor = '#10b981' }: PostCardProps) {
@@ -14,9 +15,13 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
     const [likesCount, setLikesCount] = useState(post.likes?.length || 0)
 
     const handleLike = () => {
-        setIsLiked(prev => isLiked ? prev - 1 : prev + 1)
-        setLikesCount(prev => isLiked ? prev - 1 : prev + 1)
-        // මෙතනට පස්සේ Supabase database update එක දාන්න පුළුවන්
+        // 1. මේක තමයි හරි විදිහ - True/False මාරු කරනවා විතරයි
+        setIsLiked(!isLiked) 
+
+        // 2. මෙතනදී තමයි අංකය (prev: number) වෙනස් කරන්නේ
+        setLikesCount((prev: number) => isLiked ? prev - 1 : prev + 1)
+        
+        // පස්සේ මෙතනට Supabase කෝඩ් එක දාන්න පුළුවන්
     }
 
     return (
@@ -33,7 +38,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                     </div>
                 </div>
                 <button className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-full">
-                    <MoreHorizontal size={20} />
+                    <MoreIcon size={20} />
                 </button>
             </div>
 
@@ -47,16 +52,16 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 )}
             </div>
 
-            {/* Actions (Like Button එකේ මැජික් එක මෙතන!) */}
+            {/* Actions */}
             <div className="flex items-center gap-6 pt-4 border-t border-gray-50 dark:border-gray-800">
                 <button 
                     onClick={handleLike}
                     className="flex items-center gap-2 transition-all active:scale-125 group"
-                    style={{ color: isLiked ? themeColor : '#94a3b8' }} // 👈 ලයික් කළාම Vibe Color එක එනවා
+                    style={{ color: isLiked ? themeColor : '#94a3b8' }}
                 >
-                    <Heart 
+                    <HeartIcon 
                         size={22} 
-                        fill={isLiked ? themeColor : "transparent"} // 👈 ඇතුළත පාටත් තීම් එකටම හැදෙනවා
+                        fill={isLiked ? themeColor : "transparent"} 
                         stroke={isLiked ? themeColor : "currentColor"}
                         className="transition-colors"
                     />
@@ -64,12 +69,12 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 </button>
 
                 <button className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors">
-                    <MessageCircle size={22} />
+                    <MessageIcon size={22} />
                     <span className="font-bold text-lg">{post.comments?.[0]?.count || 0}</span>
                 </button>
 
                 <button className="flex items-center gap-2 text-gray-400 hover:text-emerald-500 ml-auto transition-colors">
-                    <Share2 size={22} />
+                    <ShareIcon size={22} />
                 </button>
             </div>
         </div>
