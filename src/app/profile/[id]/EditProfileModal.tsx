@@ -1,175 +1,191 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
+import { X, Save, User, MapPin, Globe, AlignLeft, Camera, Image as ImageIcon } from 'lucide-react'
 
 export default function EditProfileModal({ profile }: { profile: any }) {
-    const [isOpen, setIsOpen] = useState(false)
-    const [displayName, setDisplayName] = useState(profile.display_name || '')
-    const [bio, setBio] = useState(profile.bio || '')
-    const [imageFile, setImageFile] = useState<File | null>(null)
-    const [imagePreview, setImagePreview] = useState<string | null>(profile.avatar_url)
-    const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    display_name: profile.display_name || '',
+    bio: profile.bio || '',
+    location: profile.location || '',
+    website: profile.website || '',
+  })
+  
+  // 📸 අලුත් Banner/Avatar සේව් කරන්න
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState(profile.cover_url || '')
 
-    const supabase = createClient()
-    const router = useRouter()
+  const supabase = createClient()
+  const router = useRouter()
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0]
-            setImageFile(file)
-            setImagePreview(URL.createObjectURL(file))
-        }
+  // ඉමේජ් එකක් තෝරද්දී Preview එක පෙන්වන්න
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setCoverFile(file)
+      setCoverPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    let finalCoverUrl = profile.cover_url
+
+    // 1. ඉමේජ් එකක් තෝරා ඇත්නම් ඒක Supabase Storage එකට අප්ලෝඩ් කරනවා
+    if (coverFile) {
+      const fileExt = coverFile.name.split('.').pop()
+      const fileName = `${profile.id}-cover-${Math.random()}.${fileExt}`
+      
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars') // 👈 ඔයාගේ bucket නම මෙතන දාන්න
+        .upload(fileName, coverFile)
+
+      if (uploadError) {
+        alert("Cover upload failed: " + uploadError.message)
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName)
+        finalCoverUrl = publicUrl
+      }
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!displayName.trim()) {
-            alert('Display name cannot be empty')
-            return
-        }
+    // 2. Profile දත්ත ටික Database එකේ update කරනවා
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        display_name: formData.display_name,
+        bio: formData.bio,
+        location: formData.location,
+        website: formData.website,
+        cover_url: finalCoverUrl, // 👈 අලුත් Banner එකේ ලින්ක් එක
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', profile.id)
 
-        setIsSubmitting(true)
-
-        try {
-            let avatar_url = profile.avatar_url
-
-            if (imageFile) {
-                const fileExt = imageFile.name.split('.').pop()
-                const fileName = `avatar_${profile.id}_${Math.random()}.${fileExt}`
-
-                // 1. මෙතන 'AVATARS' කියලා කැපිටල් කළා
-                const { error: uploadError } = await supabase.storage
-                    .from('avatars') 
-                    .upload(`${profile.id}/${fileName}`, imageFile)
-
-                if (uploadError) throw uploadError
-
-                // 2. මෙතනත් '' කියලා කැපිටල් කළා
-                const { data: { publicUrl } } = supabase.storage
-                    .from('avatars')
-                    .getPublicUrl(`${profile.id}/${fileName}`)
-
-                avatar_url = publicUrl
-            }
-
-            const { error } = await supabase
-                .from('profiles')
-                .update({ display_name: displayName, bio, avatar_url })
-                .eq('id', profile.id)
-
-            if (error) throw error
-
-            setIsOpen(false)
-            router.refresh()
-        } catch (err: any) {
-            console.error('Error updating profile:', err)
-            alert('Failed to update profile: ' + err.message)
-        } finally {
-            setIsSubmitting(false)
-        }
+    if (error) {
+      alert("Update failed: " + error.message)
+    } else {
+      setIsOpen(false)
+      router.refresh()
     }
+    setLoading(false)
+  }
 
-    return (
-        <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="bg-white border-2 border-spl-blue text-spl-blue px-6 py-2 rounded-full font-medium hover:bg-spl-blue hover:text-white transition-colors"
-            >
-                Edit Profile
-            </button>
+  return (
+    <>
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="bg-black/40 hover:bg-black/60 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 backdrop-blur-md transition-all active:scale-95 border border-white/20 shadow-lg"
+      >
+        <Camera size={18} />
+        Edit Profile
+      </button>
 
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 transition-opacity">
-                    <div className="bg-white dark:bg-[#0F172A] rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 border dark:border-gray-800">
-                        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-spl-black dark:text-gray-200">Edit Profile</h2>
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                            >
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                            </button>
-                        </div>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#0F172A] w-full max-w-2xl rounded-3xl shadow-2xl overflow-y-auto max-h-[90vh] border border-gray-100 dark:border-gray-800">
+            
+            <div className="flex items-center justify-between p-6 border-b dark:border-gray-800 sticky top-0 bg-white dark:bg-[#0F172A] z-10">
+              <h2 className="text-2xl font-black dark:text-white uppercase tracking-tighter">Profile Settings</h2>
+              <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition">
+                <X size={24} className="text-gray-500" />
+              </button>
+            </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="w-24 h-24 rounded-full bg-spl-green bg-opacity-10 flex items-center justify-center text-spl-green font-bold text-3xl overflow-hidden relative border-2 border-gray-100">
-                                    {imagePreview ? (
-                                        // 3. මෙතන unoptimized={true} එකතු කළා
-                                        <img 
-  src={imagePreview} 
-  alt="Avatar Preview" 
-  className="w-full h-full object-cover" 
-/>
-                                    ) : (
-                                        displayName?.charAt(0).toUpperCase() || 'U'
-                                    )}
-                                </div>
-                                <div>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        id="avatar-upload"
-                                        className="hidden"
-                                        onChange={handleImageChange}
-                                    />
-                                    <label
-                                        htmlFor="avatar-upload"
-                                        className="cursor-pointer text-sm font-medium text-spl-blue hover:text-spl-blue-dark transition-colors px-4 py-2 border border-spl-blue rounded-full"
-                                    >
-                                        Change Avatar
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-spl-gray-dark dark:text-gray-400 mb-1">Display Name</label>
-                                    <input
-                                        type="text"
-                                        value={displayName}
-                                        onChange={(e) => setDisplayName(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-spl-black dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-spl-blue focus:border-transparent outline-none transition-all"
-                                        placeholder="Your Name"
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-spl-gray-dark dark:text-gray-400 mb-1">Bio</label>
-                                    <textarea
-                                        value={bio}
-                                        onChange={(e) => setBio(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-spl-black dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-spl-blue focus:border-transparent outline-none transition-all min-h-[100px] resize-none"
-                                        placeholder="Tell us about yourself..."
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsOpen(false)}
-                                    className="px-6 py-2 rounded-lg font-medium text-spl-gray-dark dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="px-6 py-2 rounded-lg font-medium bg-spl-blue text-white hover:bg-spl-blue-dark transition-colors disabled:opacity-50"
-                                >
-                                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                                </button>
-                            </div>
-                        </form>
+            <form onSubmit={handleUpdate} className="p-6 space-y-6">
+              
+              {/* 📸 COVER PHOTO EDIT SECTION */}
+              <div className="space-y-3">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">Cover Photo</label>
+                <div className="relative h-40 w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 group border-2 border-dashed border-gray-300 dark:border-gray-700">
+                  {coverPreview ? (
+                    <img src={coverPreview} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                      <ImageIcon size={40} />
+                      <span className="text-xs mt-2">No Cover Photo</span>
                     </div>
+                  )}
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                    <div className="flex items-center gap-2 text-white font-bold bg-emerald-500 px-4 py-2 rounded-lg shadow-lg">
+                      <Camera size={20} /> Change Banner
+                    </div>
+                  </label>
                 </div>
-            )}
-        </>
-    )
+              </div>
+
+              {/* Display Name */}
+              <div className="space-y-2">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">Display Name</label>
+                <input
+                  type="text"
+                  value={formData.display_name}
+                  onChange={(e) => setFormData({...formData, display_name: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#1e2738] border dark:border-gray-700 rounded-xl px-4 py-3 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                  placeholder="Ishan Chanuka"
+                  required
+                />
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <label className="text-sm font-black text-gray-500 uppercase tracking-widest">Bio</label>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  className="w-full bg-gray-50 dark:bg-[#1e2738] border dark:border-gray-700 rounded-xl px-4 py-3 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none h-24 resize-none"
+                  placeholder="Add a bio..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-gray-500 uppercase tracking-widest">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#1e2738] border dark:border-gray-700 rounded-xl px-4 py-3 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                    placeholder="Dubai, UAE"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-black text-gray-500 uppercase tracking-widest">Website</label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => setFormData({...formData, website: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-[#1e2738] border dark:border-gray-700 rounded-xl px-4 py-3 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all active:scale-95"
+              >
+                {loading ? (
+                  <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <Save size={20} /> Save Changes
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
