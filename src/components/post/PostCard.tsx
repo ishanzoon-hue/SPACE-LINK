@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-center'
-import { Heart as HeartIcon, MessageCircle as MessageIcon, Share2 as ShareIcon, MoreHorizontal as MoreIcon } from 'lucide-react'
+// ✅ මෙන්න මේ පේළිය විතරක් තියාගන්න, අනිත් පරණ Import පේළි මකන්න
+import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
 
 interface PostCardProps {
   post: any;
@@ -15,13 +15,8 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
     const [likesCount, setLikesCount] = useState(post.likes?.length || 0)
 
     const handleLike = () => {
-        // 1. මේක තමයි හරි විදිහ - True/False මාරු කරනවා විතරයි
         setIsLiked(!isLiked) 
-
-        // 2. මෙතනදී තමයි අංකය (prev: number) වෙනස් කරන්නේ
         setLikesCount((prev: number) => isLiked ? prev - 1 : prev + 1)
-        
-        // පස්සේ මෙතනට Supabase කෝඩ් එක දාන්න පුළුවන්
     }
 
     return (
@@ -38,7 +33,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                     </div>
                 </div>
                 <button className="text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-full">
-                    <MoreIcon size={20} />
+                    <MoreHorizontal size={20} />
                 </button>
             </div>
 
@@ -59,7 +54,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                     className="flex items-center gap-2 transition-all active:scale-125 group"
                     style={{ color: isLiked ? themeColor : '#94a3b8' }}
                 >
-                    <HeartIcon 
+                    <Heart 
                         size={22} 
                         fill={isLiked ? themeColor : "transparent"} 
                         stroke={isLiked ? themeColor : "currentColor"}
@@ -69,12 +64,12 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 </button>
 
                 <button className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-colors">
-                    <MessageIcon size={22} />
+                    <MessageCircle size={22} />
                     <span className="font-bold text-lg">{post.comments?.[0]?.count || 0}</span>
                 </button>
 
                 <button className="flex items-center gap-2 text-gray-400 hover:text-emerald-500 ml-auto transition-colors">
-                    <ShareIcon size={22} />
+                    <Share2 size={22} />
                 </button>
             </div>
         </div>
