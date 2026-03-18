@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import EmojiPicker from 'emoji-picker-react'
+import EmojiPicker, { Theme } from 'emoji-picker-react'
 
 export default function ChatPage() {
   const params = useParams() 
@@ -144,7 +144,7 @@ export default function ChatPage() {
 
         {showEmojiPicker && (
           <div className="absolute bottom-20 left-4 z-50">
-            <EmojiPicker onEmojiClick={(d) => setNewMessage(p => p + d.emoji)} theme="dark" />
+           <EmojiPicker onEmojiClick={(d) => setNewMessage(p => p + d.emoji)} theme={Theme.DARK} />
           </div>
         )}
 
