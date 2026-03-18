@@ -4,7 +4,7 @@ import SearchBar from './SearchBar'
 import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
-import { Video } from 'lucide-react'
+// ❌ Video import එක අයින් කළා
 
 export default async function Navbar() {
     const supabase = await createClient()
@@ -31,7 +31,7 @@ export default async function Navbar() {
         <header className="bg-white dark:bg-[#0F172A] border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors">
             <div className="max-w-5xl mx-auto px-2 sm:px-4 h-16 flex items-center justify-between gap-1 sm:gap-4">
                 
-                {/* 1. Logo - මොබයිල් වලදී කුඩා කර ඇත (w-24) */}
+                {/* 1. Logo */}
                 <Link href="/" className="shrink-0 transition-opacity hover:opacity-80">
                     <div className="flex items-center">
                         <svg 
@@ -52,12 +52,12 @@ export default async function Navbar() {
                     </div>
                 </Link>
 
-                {/* 2. Search Bar - දැන් හැම තිරයකටම පෙනේ (flex භාවිතා කළා) */}
+                {/* 2. Search Bar */}
                 <div className="flex-1 max-w-[140px] xs:max-w-[200px] sm:max-w-sm mx-1 sm:mx-4">
                     <SearchBar />
                 </div>
 
-                {/* 3. Action Icons - මොබයිල් වලදී පරතරය අඩු කර ඇත (gap-2) */}
+                {/* 3. Action Icons */}
                 <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
                     {user ? (
                         <>
@@ -71,10 +71,7 @@ export default async function Navbar() {
                                 <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                             </Link>
 
-                            {/* Video Call */}
-                            <Link href="/video-call" className="p-1.5 text-gray-500 hover:text-spl-green dark:text-gray-400 transition-colors">
-                                <Video className="w-5 h-5 sm:w-6 sm:h-6" />
-                            </Link>
+                            {/* ❌ Video Call Link එක මෙතනින් අයින් කළා */}
 
                             {/* Profile */}
                             <Link href={`/profile/${user.id}`} className="p-1.5 text-gray-500 hover:text-spl-green dark:text-gray-400 transition-colors hidden sm:block">
