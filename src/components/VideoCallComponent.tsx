@@ -10,7 +10,7 @@ export default function VideoCallComponent({ friendId }: { friendId: string }) {
     const supabase = createClient();
 
     useEffect(() => {
-        const getUser = async () => {
+        const getUser =  () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) setUser(user);
         };
