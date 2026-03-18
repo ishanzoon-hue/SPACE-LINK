@@ -5,9 +5,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
-// අලුතින් එකතු කළ යුතු Import දෙක මෙන්න
+// නිවැරදි Import එක
 import { createClient } from '@/utils/supabase/server'; 
-import IncomingCallHandler from '@/components/IncomingCallHandler';
+import IncomingCall from '@/components/IncomingCall';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,13 +24,12 @@ export const metadata: Metadata = {
   description: "Join the conversation today on Elimeno.",
 };
 
-// Layout එක 'async' ලෙස වෙනස් කරන්න
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 1. සර්වර් සයිඩ් එකේදී පරිශීලකයා ලබා ගැනීම
+  // සර්වර් සයිඩ් එකේදී පරිශීලකයා ලබා ගැනීම
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -51,8 +50,10 @@ export default async function RootLayout({
           </main>
           <Footer />
 
-          {/* 2. පරිශීලකයා ලොග් වී ඇත්නම් පමණක් Call Handler එක පෙන්වන්න */}
-          {user && <IncomingCallHandler currentUserId={user.id} />}
+          {/* පරිශීලකයා ලොග් වී ඇත්නම් පමණක් කෝල් ලොජික් එක පෙන්වන්න. 
+            අපි උඩින් Import කරපු නමම (IncomingCall) මෙතනට පාවිච්චි කරන්න.
+          */}
+          {user && <IncomingCall />}
           
         </ThemeProvider>
       </body>
