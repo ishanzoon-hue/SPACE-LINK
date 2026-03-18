@@ -30,7 +30,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
         notFound()
     }
 
-    // යූසර් තෝරලා තියෙන පාට (Vibe Color) එක මෙතන තියෙනවා
+    // යූසර් තෝරලා තියෙන පාට (Vibe Color)
     const vibeColor = profile.theme_color || '#10b981'
 
     // 2. User ගේ Posts Fetch කිරීම
@@ -58,7 +58,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
     const isOwnProfile = currentUser?.id === id
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-[#020817] text-white pb-10">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#020817] text-white pb-10 transition-colors">
             
             {/* 📸 COVER PHOTO */}
             <div 
@@ -109,7 +109,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                             </button>
                         ) : (
                             <div className="flex gap-3">
-                                <FollowButton targetUserId={id} currentUserId={currentUser?.id} initialIsFollowing={isFollowing} />
+                                {/* ✅ Vercel Fix: මෙතන currentUserId එකට || '' ඇඩ් කළා */}
+                                <FollowButton 
+                                    targetUserId={id} 
+                                    currentUserId={currentUser?.id || ''} 
+                                    initialIsFollowing={isFollowing} 
+                                />
                                 <Link href={`/chat/${id}`} className="bg-gray-800 text-white px-8 py-3 rounded-xl font-bold">Message</Link>
                             </div>
                         )}
@@ -121,7 +126,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                     {/* LEFT SIDEBAR (Intro) */}
                     <div className="lg:col-span-3 space-y-6">
                         <div className="bg-white dark:bg-[#0F172A] p-6 rounded-2xl shadow-sm border border-gray-800 sticky top-24">
-                            <h3 className="font-black text-2xl mb-5 uppercase tracking-tighter">Intro</h3>
+                            <h3 className="font-black text-2xl mb-5 dark:text-white uppercase tracking-tighter">Intro</h3>
                             <p className="text-center text-gray-300 mb-8 italic">"{profile.bio || 'Sharing my thoughts with the world.'}"</p>
                             <div className="space-y-5 text-gray-300">
                                 <div className="flex items-center gap-4">
@@ -144,7 +149,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                                 <PostCard 
                                     post={post} 
                                     currentUserId={currentUser?.id} 
-                                    themeColor={vibeColor} // 👈 මෙන්න මම මේ පේළිය ඇඩ් කළා!
+                                    themeColor={vibeColor}
                                 />
                             </div>
                         ))}
