@@ -1,5 +1,6 @@
 import Feed from '@/components/post/Feed'
 import OnlineFriends from '@/components/OnlineFriends'
+import FollowingList from '@/components/FollowingList' // 👈 මෙන්න මේක අලුතින් දැම්මා
 import { createClient } from '@/utils/supabase/server'
 
 // මේ function එකට ඉදිරියෙන් 'export default' අනිවාර්යයෙන්ම තිබිය යුතුයි
@@ -14,8 +15,11 @@ export default async function Home() {
       </div>
       
       {user && (
-        <div className="hidden lg:block w-72 shrink-0">
+        <div className="hidden lg:flex flex-col gap-6 w-72 shrink-0">
           <OnlineFriends currentUserId={user.id} />
+          
+          {/* 👈 මෙන්න මෙතනින් තමයි අපි Following List එක පේජ් එකට දාන්නේ */}
+          <FollowingList /> 
         </div>
       )}
     </div>
