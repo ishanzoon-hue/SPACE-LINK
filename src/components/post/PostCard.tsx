@@ -14,7 +14,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
     const [likesCount, setLikesCount] = useState(post.likes?.length || 0)
 
     const handleLike = () => {
-        setIsLiked(!isLiked)
+        setIsLiked(prev => isLiked ? prev - 1 : prev + 1)
         setLikesCount(prev => isLiked ? prev - 1 : prev + 1)
         // මෙතනට පස්සේ Supabase database update එක දාන්න පුළුවන්
     }
