@@ -3,15 +3,16 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 
 export default function ChatPage() {
-  const params = useParams() 
+  const params = useParams()
+  const router = useRouter()
   const receiverId = params?.id as string
   const supabase = createClient()
 
-  // --- 1. Variables (දත්ත තියාගන්න තැන්) ---
+  // --- States ---
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [receiver, setReceiver] = useState<any>(null)
   const [messages, setMessages] = useState<any[]>([])
@@ -19,11 +20,9 @@ export default function ChatPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [uploading, setUploading] = useState(false)
 
-  // --- 2. Refs (අයිතම අල්ලගන්නා "සලකුණු") ---
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // අලුත් මැසේජ් ආවම පල්ලෙහාටම යන විදිහ
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -32,34 +31,53 @@ export default function ChatPage() {
     scrollToBottom()
   }, [messages])
 
-  // --- 3. Logic (වැඩ කරන විදිහ) ---
+  // --- දත්ත ලබාගැනීම ---
   useEffect(() => {
     if (!receiverId) return;
     
-    const fetchUserAndData = async () => {
+    const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUser(user)
         fetchMessages(user.id, receiverId)
       }
-      const { data: receiverData } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', receiverId).single()
-      if (receiverData) setReceiver(receiverData)
+      const { data: recData } = await supabase.from('profiles').select('*').eq('id', receiverId).single()
+      if (recData) setReceiver(recData)
     }
-    fetchUserAndData()
+    fetchData()
 
-    const channel = supabase.channel('realtime-messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+    const channel = supabase.channel('realtime-chat').on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages' 
+    }, (payload) => {
         setMessages((prev) => [...prev, payload.new])
-      }).subscribe()
+    }).subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [receiverId])
 
   const fetchMessages = async (currentUserId: string, friendId: string) => {
-    const { data } = await supabase.from('messages').select('*').or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${friendId}),and(sender_id.eq.${receiverId},receiver_id.eq.${currentUserId})`).order('created_at', { ascending: true })
+    const { data } = await supabase.from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${currentUserId})`)
+        .order('created_at', { ascending: true })
     if (data) setMessages(data)
   }
 
-  // ෆොටෝ එකක් Upload කරන විදිහ
+  // --- Logic: Video Call ---
+  const startVideoCall = async () => {
+    if (!currentUser) return
+    const { error } = await supabase.from('calls').insert({
+      caller_id: currentUser.id,
+      receiver_id: receiverId,
+      status: 'ringing'
+    })
+    if (!error) router.push(`/video-call/${receiverId}`)
+    else alert("Call failed: " + error.message)
+  }
+
+  // --- Logic: Image Upload ---
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file || !currentUser) return
@@ -88,6 +106,7 @@ export default function ChatPage() {
     setUploading(false)
   }
 
+  // --- Logic: Send Message ---
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentUser) return;
     await supabase.from('messages').insert({
@@ -100,16 +119,23 @@ export default function ChatPage() {
     setShowEmojiPicker(false)
   }
 
-  // --- 4. Visuals (ඇසට පෙනෙන පෙනුම) ---
   return (
     <div className="flex flex-col h-screen bg-[#0f172a] text-white">
       {/* Header */}
-      <div className="flex items-center gap-4 p-4 border-b border-gray-700 bg-[#1e2738]">
-        <Link href="/" className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-        </Link>
-        <img src={receiver?.avatar_url || 'https://via.placeholder.com/40'} className="w-10 h-10 rounded-full border border-gray-600 object-cover" />
-        <h1 className="text-xl font-bold">{receiver?.display_name || 'Loading...'}</h1>
+      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-[#1e2738]">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          </Link>
+          <img src={receiver?.avatar_url || 'https://via.placeholder.com/40'} className="w-10 h-10 rounded-full border border-gray-600 object-cover" />
+          <h1 className="text-xl font-bold">{receiver?.display_name || 'Loading...'}</h1>
+        </div>
+
+        <button onClick={startVideoCall} className="p-3 bg-green-600 rounded-full hover:bg-green-500 transition-all shadow-lg active:scale-90">
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </button>
       </div>
 
       {/* Messages ලිස්ට් එක */}
@@ -128,23 +154,22 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area (මැසේජ් ටයිප් කරන තැන) */}
+      {/* Input Area (ආයෙත් දාපු ටික 😎) */}
       <div className="p-4 bg-[#1e2738] border-t border-gray-700 flex gap-2 items-center relative">
-        
-        {/* පින්තූර තෝරන බට්න් එක */}
+        {/* පින්තූර */}
         <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-green-400 p-1">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
         </button>
         <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
 
-        {/* Emoji බට්න් එක */}
+        {/* ඉමෝජි */}
         <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-400 hover:text-yellow-400">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </button>
 
         {showEmojiPicker && (
           <div className="absolute bottom-20 left-4 z-50">
-           <EmojiPicker onEmojiClick={(d) => setNewMessage(p => p + d.emoji)} theme={Theme.DARK} />
+            <EmojiPicker onEmojiClick={(d) => setNewMessage(p => p + d.emoji)} theme={Theme.DARK} />
           </div>
         )}
 
