@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
-import toast from 'react-hot-toast' // ✅ Toast import කළා
+import toast from 'react-hot-toast'
 
 interface PostCardProps {
   post: any;
@@ -27,6 +27,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
         }
     }, [currentUserId, post.likes])
 
+    // ✅ 1. ලයික් එක දාන ෆන්ක්ෂන් එක
     const handleLike = async () => {
         if (!currentUserId) return toast.error("Please login to like!")
 
@@ -36,13 +37,15 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
 
         try {
             if (originalIsLiked) {
+                // ලයික් එක අයින් කරනවා
                 await supabase.from('likes').delete().match({ post_id: post.id, user_id: currentUserId })
             } else {
+                // ලයික් එක දානවා
                 await supabase.from('likes').insert([{ post_id: post.id, user_id: currentUserId }])
                 
-                // 🔔 Notification logic
-                const postOwnerId = post.user_id || post.author?.id; 
-                if (postOwnerId && postOwnerId !== currentUserId) {
+                // 🔔 ලයික් එකට නොටිෆිකේෂන් එකක් යවනවා
+                const postOwnerId = post.user_id || post.author?.id || post.author_id; 
+                if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
                     await supabase.from('notifications').insert([{
                         user_id: postOwnerId,
                         from_user_id: currentUserId,
@@ -61,6 +64,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
         }
     }
 
+    // ✅ 2. කමෙන්ට්ස් ගන්න ෆන්ක්ෂන් එක
     const fetchComments = async () => {
         const { data } = await supabase
             .from('comments')
@@ -74,6 +78,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
         if (showComments) fetchComments()
     }, [showComments])
 
+    // ✅ 3. කමෙන්ට් එකක් දාන ෆන්ක්ෂන් එක
     const handleCommentSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!commentText.trim() || !currentUserId) return
@@ -87,8 +92,9 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
             fetchComments()
             toast.success('Comment posted! 💬')
             
-            const postOwnerId = post.user_id || post.author?.id;
-            if (postOwnerId && postOwnerId !== currentUserId) {
+            // 🔔 කමෙන්ට් එකට නොටිෆිකේෂන් එකක් යවනවා
+            const postOwnerId = post.user_id || post.author?.id || post.author_id;
+            if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
                 await supabase.from('notifications').insert([{
                     user_id: postOwnerId,
                     from_user_id: currentUserId,
@@ -101,7 +107,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
 
     return (
         <div className="bg-white dark:bg-[#0F172A] rounded-[32px] p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all mb-5">
-            {/* Header, Content and Actions (පරණ විදිහටම තියෙයි) */}
+            {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2" style={{ borderColor: themeColor }}>
@@ -114,6 +120,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 </div>
             </div>
 
+            {/* Content */}
             <div className="mb-6">
                 <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed mb-4">{post.content}</p>
                 {post.image_url && (
@@ -123,6 +130,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 )}
             </div>
 
+            {/* Actions */}
             <div className="flex items-center gap-6 pt-4 border-t border-gray-50 dark:border-gray-800">
                 <button onClick={handleLike} className="flex items-center gap-2 transition-all active:scale-125" style={{ color: isLiked ? themeColor : '#94a3b8' }}>
                     <Heart size={24} fill={isLiked ? themeColor : "transparent"} stroke={isLiked ? themeColor : "currentColor"} />
@@ -134,6 +142,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 </button>
             </div>
 
+            {/* Comments Section */}
             {showComments && (
                 <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
                     <div className="max-h-60 overflow-y-auto space-y-4 pr-2">
