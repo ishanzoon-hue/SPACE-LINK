@@ -3,16 +3,22 @@
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
-import { X, Save, Camera, Image as ImageIcon, Check, Palette } from 'lucide-react'
+import { X, Save, Camera, Check, Palette, Loader2, MapPin, Briefcase, GraduationCap, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import toast from 'react-hot-toast'
 
 export default function EditProfileModal({ profile }: { profile: any }) {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  
+  // 1. ඔක්කොම Fields ටික මෙතන තියෙනවා
   const [formData, setFormData] = useState({
     display_name: profile.display_name || '',
     bio: profile.bio || '',
     location: profile.location || '',
+    education: profile.education || '',
+    work: profile.work || '',
+    website: profile.website || '',
     theme_color: profile.theme_color || '#10b981'
   })
   
@@ -41,6 +47,7 @@ export default function EditProfileModal({ profile }: { profile: any }) {
       let finalCoverUrl = profile.cover_url
       let finalAvatarUrl = profile.avatar_url
 
+      // Image Upload Logic
       if (coverFile) {
         const fileName = `cover-${profile.id}-${Date.now()}`
         const { data } = await supabase.storage.from('avatars').upload(fileName, coverFile)
@@ -53,6 +60,7 @@ export default function EditProfileModal({ profile }: { profile: any }) {
         if (data) finalAvatarUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl
       }
 
+      // Supabase Update
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -64,11 +72,14 @@ export default function EditProfileModal({ profile }: { profile: any }) {
         .eq('id', profile.id)
 
       if (!error) {
+        toast.success("Vibe Applied! 🚀")
         setIsOpen(false)
         router.refresh()
+      } else {
+        toast.error("Update failed ❌")
       }
     } catch (err) {
-      alert("Error updating profile")
+      toast.error("Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -89,20 +100,22 @@ export default function EditProfileModal({ profile }: { profile: any }) {
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-[#0F172A] w-full max-w-xl rounded-[32px] overflow-hidden shadow-2xl border dark:border-gray-800"
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-[#0F172A] w-full max-w-xl rounded-[40px] overflow-hidden shadow-2xl border dark:border-gray-800"
             >
-              <div className="p-6 border-b dark:border-gray-800 flex justify-between items-center">
+              {/* Header */}
+              <div className="p-6 border-b dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
                 <h2 className="text-xl font-black dark:text-white flex items-center gap-2 uppercase tracking-tighter">
-                   <Palette className="text-emerald-500" /> SELECT YOUR VIBE
+                   <Palette style={{ color: formData.theme_color }} /> CUSTOMIZE YOUR PROFILE
                 </h2>
-                <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition"><X size={20} /></button>
+                <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition text-gray-400"><X size={24} /></button>
               </div>
 
-              <form onSubmit={handleUpdate} className="p-8 space-y-8 overflow-y-auto max-h-[75vh]">
+              <form onSubmit={handleUpdate} className="p-8 space-y-8 overflow-y-auto max-h-[75vh] no-scrollbar">
                 
-                {/* 🎨 VIBE SELECTOR (මේක තමයි පේන්නේ නැතුව ඇති) */}
+                {/* 🎨 VIBE SELECTOR */}
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Pick a Profile Theme</label>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Pick a Profile Theme Color</label>
                   <div className="flex flex-wrap gap-4">
                     {vibes.map((vibe) => (
                       <button
@@ -120,44 +133,113 @@ export default function EditProfileModal({ profile }: { profile: any }) {
 
                 {/* Media Section */}
                 <div className="grid grid-cols-1 gap-6">
-                  <div className="relative h-32 w-full rounded-2xl overflow-hidden bg-gray-800 border-2 border-dashed border-gray-700">
-                    <img src={coverPreview} className="w-full h-full object-cover opacity-50" />
-                    <label className="absolute inset-0 flex items-center justify-center cursor-pointer">
+                  <div className="relative h-36 w-full rounded-3xl overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700">
+                    <img src={coverPreview} className="w-full h-full object-cover opacity-60" />
+                    <label className="absolute inset-0 flex items-center justify-center cursor-pointer hover:bg-black/20 transition-colors">
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) { setCoverFile(file); setCoverPreview(URL.createObjectURL(file)); }
                       }} />
-                      <span className="bg-white text-black font-bold px-3 py-1.5 rounded-lg text-xs">Change Banner</span>
+                      <span className="bg-white text-black font-black px-4 py-2 rounded-xl text-xs shadow-xl uppercase">Change Cover</span>
                     </label>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-4 shadow-lg" style={{ borderColor: formData.theme_color }}>
+                  <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 shadow-2xl shrink-0" style={{ borderColor: formData.theme_color }}>
                       <img src={avatarPreview} className="w-full h-full object-cover" />
                     </div>
-                    <label className="cursor-pointer text-white px-4 py-2 rounded-xl font-bold text-sm" style={{ backgroundColor: formData.theme_color }}>
+                    <label className="cursor-pointer text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg transition-transform active:scale-95" style={{ backgroundColor: formData.theme_color }}>
                       <input type="file" className="hidden" accept="image/*" onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)); }
                       }} />
-                      Change Photo
+                      CHANGE PHOTO
                     </label>
                   </div>
                 </div>
 
-                {/* Info Inputs */}
-                <div className="space-y-4">
-                  <input type="text" value={formData.display_name} onChange={(e) => setFormData({...formData, display_name: e.target.value})} className="w-full bg-gray-100 dark:bg-gray-800 rounded-2xl px-5 py-4 dark:text-white outline-none" placeholder="Name" />
-                  <textarea value={formData.bio} onChange={(e) => setFormData({...formData, bio: e.target.value})} className="w-full bg-gray-100 dark:bg-gray-800 rounded-2xl px-5 py-4 dark:text-white outline-none h-24" placeholder="Bio" />
-                </div>
+                {/* Info Inputs - ඔක්කොම Fields ටික මෙතන පිළිවෙළට තියෙනවා */}
+                <div className="grid grid-cols-1 gap-5">
+                 <div className="space-y-2">
+    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Display Name</label>
+    <input 
+      type="text" 
+      value={formData.display_name} 
+      onChange={(e) => setFormData({...formData, display_name: e.target.value})} 
+      className="w-full bg-gray-100 dark:bg-gray-800/50 rounded-2xl px-5 py-4 text-gray-900 dark:text-white placeholder-gray-500 outline-none border border-transparent focus:border-gray-400 dark:focus:border-gray-700 transition-all" 
+      placeholder="Enter your name" 
+    />
+  </div>
 
+  <div className="space-y-2">
+    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Bio</label>
+    <textarea 
+      value={formData.bio} 
+      onChange={(e) => setFormData({...formData, bio: e.target.value})} 
+      className="w-full bg-gray-100 dark:bg-gray-800/50 rounded-2xl px-5 py-4 text-gray-900 dark:text-white placeholder-gray-500 outline-none h-24 border border-transparent focus:border-gray-400 dark:focus:border-gray-700 transition-all resize-none" 
+      placeholder="Tell us about yourself..." 
+    />
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="relative">
+       <MapPin className="absolute left-4 top-4 text-gray-500" size={20} />
+       <input 
+         type="text" 
+         value={formData.location} 
+         onChange={(e) => setFormData({...formData, location: e.target.value})} 
+         className="w-full bg-gray-100 dark:bg-gray-800/50 rounded-2xl pl-12 pr-5 py-4 text-gray-900 dark:text-white placeholder-gray-500 outline-none border border-transparent focus:border-gray-400 dark:focus:border-gray-700 transition-all" 
+         placeholder="Location" 
+       />
+    </div>
+    <div className="relative">
+       <Briefcase className="absolute left-4 top-4 text-gray-500" size={20} />
+       <input 
+         type="text" 
+         value={formData.work} 
+         onChange={(e) => setFormData({...formData, work: e.target.value})} 
+         className="w-full bg-gray-100 dark:bg-gray-800/50 rounded-2xl pl-12 pr-5 py-4 text-gray-900 dark:text-white placeholder-gray-500 outline-none border border-transparent focus:border-gray-400 dark:focus:border-gray-700 transition-all" 
+         placeholder="Work" 
+       />
+    </div>
+  </div>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="relative">
+       <GraduationCap className="absolute left-4 top-4 text-gray-500" size={20} />
+       <input 
+         type="text" 
+         value={formData.education} 
+         onChange={(e) => setFormData({...formData, education: e.target.value})} 
+         className="w-full bg-gray-100 dark:bg-gray-800/50 rounded-2xl pl-12 pr-5 py-4 text-gray-900 dark:text-white placeholder-gray-500 outline-none border border-transparent focus:border-gray-400 dark:focus:border-gray-700 transition-all" 
+         placeholder="Education" 
+       />
+    </div>
+    <div className="relative">
+       <Globe className="absolute left-4 top-4 text-gray-500" size={20} />
+       <input 
+         type="text" 
+         value={formData.website} 
+         onChange={(e) => setFormData({...formData, website: e.target.value})} 
+         className="w-full bg-gray-100 dark:bg-gray-800/50 rounded-2xl pl-12 pr-5 py-4 text-gray-900 dark:text-white placeholder-gray-500 outline-none border border-transparent focus:border-gray-400 dark:focus:border-gray-700 transition-all" 
+         placeholder="Website URL" 
+       />
+    </div>
+  </div>
+</div>
+
+                {/* Submit Button */}
                 <button 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full py-5 rounded-[24px] font-black text-white shadow-2xl transition-all active:scale-95"
+                  className="w-full py-5 rounded-[28px] font-black text-white shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
                   style={{ backgroundColor: formData.theme_color }}
                 >
-                  {loading ? "Saving..." : "APPLY VIBE & SAVE"}
+                  {loading ? (
+                    <><Loader2 className="animate-spin" /> APPLYING VIBE...</>
+                  ) : (
+                    "APPLY VIBE & SAVE CHANGES"
+                  )}
                 </button>
               </form>
             </motion.div>
