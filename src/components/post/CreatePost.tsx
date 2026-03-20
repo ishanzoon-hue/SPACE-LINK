@@ -50,7 +50,7 @@ export default function CreatePost({ user }: CreatePostProps) {
             if (image) {
                 const fileExt = image.name.split('.').pop()
                 const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-                const filePath = `${userId}/${fileName}`
+                const filePath = `${user.Id}/${fileName}`
 
                 const { error: uploadError } = await supabase.storage
                     .from('posts')
@@ -69,7 +69,7 @@ export default function CreatePost({ user }: CreatePostProps) {
             // 2. පෝස්ට් එකේ දත්ත Database (posts table) එකේ සේව් කිරීම
             const { error } = await supabase.from('posts').insert({
                 content,
-                user_id: userId,
+                user_id: user.Id,
                 image_url: imageUrl,
                 video_url: videoUrl.trim() || null // 👈 Video URL එක මෙතනින් යනවා
             })
