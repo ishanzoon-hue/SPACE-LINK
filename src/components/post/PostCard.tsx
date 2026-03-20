@@ -5,6 +5,21 @@ import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from 'lucide-react
 import { createClient } from '@/utils/supabase/client'
 import toast from 'react-hot-toast'
 
+// 🎬 YouTube සහ TikTok ලින්ක්ස් වලට සපෝට් කරන Helper Function එක
+const getEmbedUrl = (url: string) => {
+    if (!url) return null;
+    
+    // YouTube Check
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*embed\/))([^&?]+)/);
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    
+    // TikTok Check
+    const ttMatch = url.match(/tiktok\.com\/.*\/video\/(\d+)/);
+    if (ttMatch) return `https://www.tiktok.com/embed/v2/${ttMatch[1]}`;
+    
+    return null;
+}
+
 interface PostCardProps {
   post: any;
   currentUserId?: string;
@@ -18,6 +33,9 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
     const [showComments, setShowComments] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [commentsList, setCommentsList] = useState<any[]>([])
+
+    // 🎬 Video URL එක ගන්න Variable එක
+    const embedUrl = post?.video_url ? getEmbedUrl(post.video_url) : null;
 
     useEffect(() => {
         if (post.likes) {
@@ -120,22 +138,40 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 </div>
             </div>
 
-            {/* Content */}
+            {/* Content Area */}
             <div className="mb-6">
                 <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed mb-4">{post.content}</p>
+                
+                {/* 🖼️ Image Display */}
                 {post.image_url && (
-                    <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+                    <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-4">
                         <img src={post.image_url} alt="post" className="w-full h-auto" />
+                    </div>
+                )}
+
+                {/* 🎬 Video Player Display */}
+                {embedUrl && (
+                    <div className="mt-4 w-full aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-black relative shadow-lg">
+                        <iframe 
+                            src={embedUrl} 
+                            className="absolute top-0 left-0 w-full h-full"
+                            frameBorder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowFullScreen
+                        ></iframe>
                     </div>
                 )}
             </div>
 
-            {/* Actions */}
+            {/* Actions (Like & Comment) */}
             <div className="flex items-center gap-6 pt-4 border-t border-gray-50 dark:border-gray-800">
+                {/* ❤️ Like Button */}
                 <button onClick={handleLike} className="flex items-center gap-2 transition-all active:scale-125" style={{ color: isLiked ? themeColor : '#94a3b8' }}>
                     <Heart size={24} fill={isLiked ? themeColor : "transparent"} stroke={isLiked ? themeColor : "currentColor"} />
                     <span className="font-bold text-lg">{likesCount}</span>
                 </button>
+                
+                {/* 💬 Comment Toggle Button */}
                 <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2" style={{ color: showComments ? themeColor : '#94a3b8' }}>
                     <MessageCircle size={24} />
                     <span className="font-bold text-lg">{commentsList.length || post.comments?.[0]?.count || 0}</span>
@@ -146,19 +182,37 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
             {showComments && (
                 <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
                     <div className="max-h-60 overflow-y-auto space-y-4 pr-2">
+                        {commentsList.length === 0 && (
+                            <p className="text-gray-500 text-sm text-center py-2 italic">No comments yet. Be the first!</p>
+                        )}
                         {commentsList.map((comment) => (
                             <div key={comment.id} className="flex gap-3">
-                                <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full" />
+                                <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full flex-shrink-0" alt="avatar" />
                                 <div className="bg-gray-100 dark:bg-gray-800/60 p-3 rounded-2xl flex-1 text-sm">
-                                    <p className="font-bold">{comment.profiles?.display_name}</p>
-                                    <p>{comment.content}</p>
+                                    <p className="font-bold text-gray-900 dark:text-white">{comment.profiles?.display_name}</p>
+                                    <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <form onSubmit={handleCommentSubmit} className="flex items-center gap-3">
-                        <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Add a comment..." className="w-full bg-gray-100 dark:bg-gray-800/40 rounded-2xl py-3 px-5 outline-none" />
-                        <button type="submit" style={{ color: themeColor }}><Send size={20} /></button>
+
+                    {/* Comment Input Form */}
+                    <form onSubmit={handleCommentSubmit} className="flex items-center gap-3 mt-4">
+                        <input 
+                            type="text" 
+                            value={commentText} 
+                            onChange={(e) => setCommentText(e.target.value)} 
+                            placeholder="Add a comment..." 
+                            className="w-full bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-white rounded-2xl py-3 px-5 outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-700 transition-all" 
+                        />
+                        <button 
+                            type="submit" 
+                            disabled={!commentText.trim()}
+                            className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all disabled:opacity-30"
+                            style={{ color: themeColor }}
+                        >
+                            <Send size={20} />
+                        </button>
                     </form>
                 </div>
             )}
