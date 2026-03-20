@@ -124,19 +124,38 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
         }
     }
 
+    // 🚀 4. Share කරන අලුත් ෆන්ක්ෂන් එක
+    const handleShare = async () => {
+        const shareUrl = `${window.location.origin}/profile/${post.user_id}`;
+        
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `Post by ${post.author?.display_name}`,
+                    text: post.content ? post.content : "Check out this post on Space Link!",
+                    url: shareUrl,
+                });
+                toast.success('Shared successfully! 🚀');
+            } catch (error) {
+                console.log('Error sharing', error);
+            }
+        } else {
+            await navigator.clipboard.writeText(shareUrl);
+            toast.success('Link copied! 📋');
+        }
+    }
+
     return (
         <div className="bg-white dark:bg-[#0F172A] rounded-[32px] p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all mb-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    {/* 🔴 ෆොටෝ එක උඩ ක්ලික් කළාම ප්‍රොෆයිල් එකට යනවා */}
                     <Link href={`/profile/${post.user_id}`}>
                         <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2 cursor-pointer hover:scale-105 transition-transform" style={{ borderColor: themeColor }}>
                             <img src={post.author?.avatar_url || '/default-avatar.png'} alt="avatar" className="w-full h-full object-cover" />
                         </div>
                     </Link>
                     <div>
-                        {/* 🔴 නම උඩ ක්ලික් කළාම ප්‍රොෆයිල් එකට යනවා */}
                         <Link href={`/profile/${post.user_id}`}>
                             <h4 className="font-bold text-gray-900 dark:text-white leading-tight cursor-pointer hover:underline" style={{ textDecorationColor: themeColor }}>
                                 {post.author?.display_name}
@@ -172,7 +191,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 )}
             </div>
 
-            {/* Actions (Like & Comment) */}
+            {/* Actions (Like, Comment & Share) */}
             <div className="flex items-center gap-6 pt-4 border-t border-gray-50 dark:border-gray-800">
                 {/* ❤️ Like Button */}
                 <button onClick={handleLike} className="flex items-center gap-2 transition-all active:scale-125" style={{ color: isLiked ? themeColor : '#94a3b8' }}>
@@ -184,6 +203,11 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                 <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2" style={{ color: showComments ? themeColor : '#94a3b8' }}>
                     <MessageCircle size={24} />
                     <span className="font-bold text-lg">{commentsList.length || post.comments?.[0]?.count || 0}</span>
+                </button>
+
+                {/* 🚀 අලුත් Share Button එක */}
+                <button onClick={handleShare} className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-all ml-auto hover:scale-110">
+                    <Share2 size={24} />
                 </button>
             </div>
 
