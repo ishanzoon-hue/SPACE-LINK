@@ -16,6 +16,7 @@ export default function EditProfileModal({ profile }: { profile: any }) {
     display_name: profile.display_name || '',
     bio: profile.bio || '',
     location: profile.location || '',
+    birthday: profile.birthday || '',
     education: profile.education || '',
     work: profile.work || '',
     website: profile.website || '',
@@ -180,6 +181,16 @@ export default function EditProfileModal({ profile }: { profile: any }) {
       placeholder="Tell us about yourself..." 
     />
   </div>
+
+<div>
+    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Birthday</label>
+    <input
+        type="date"
+        value={formData.birthday}
+        onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+        className="w-full bg-[#0F172A] border border-gray-800 text-white rounded-2xl px-4 py-3 mt-2 focus:outline-none focus:border-emerald-500 transition-all"
+    />
+</div>
 
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div className="relative">

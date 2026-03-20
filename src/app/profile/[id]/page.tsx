@@ -6,7 +6,8 @@ import FollowButton from './FollowButton'
 import EditProfileModal from './EditProfileModal'
 import OnlineFollowers from '@/components/post/OnlineFollowers'
 import AdSection from '@/components/AdSection'
-import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard } from 'lucide-react'
+// 🛠️ මෙතන මම imports ඔක්කොම එක පේළියකට ගත්තා (MapPin දෙපාරක් තිබුණ එක අයින් කළා)
+import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -95,64 +96,75 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                     
                     {/* LEFT: INTRO (3 Columns) */}
                     <div className="lg:col-span-3">
-        <div className="bg-[#0F172A] p-6 rounded-[32px] border border-gray-800 sticky top-24 shadow-xl">
-            <h3 className="font-black text-3xl mb-6 uppercase tracking-tighter italic text-white">Intro</h3>
-            
-            {/* Bio */}
-            {profile.bio && (
-                <p className="text-center text-gray-300 mb-8 italic text-lg leading-relaxed border-b border-gray-800 pb-6">
-                    "{profile.bio}"
-                </p>
-            )}
+                        <div className="bg-[#0F172A] p-6 rounded-[32px] border border-gray-800 sticky top-24 shadow-xl">
+                            <h3 className="font-black text-3xl mb-6 uppercase tracking-tighter italic text-white">Intro</h3>
+                            
+                            {/* Bio */}
+                            {profile.bio && (
+                                <p className="text-center text-gray-300 mb-8 italic text-lg leading-relaxed border-b border-gray-800 pb-6">
+                                    "{profile.bio}"
+                                </p>
+                            )}
 
-            <div className="space-y-6">
-                {/* Location */}
-                {profile.location && (
-                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
-                        <MapPin style={{ color: vibeColor }} size={24} className="shrink-0" />
-                        <span className="text-lg">Lives in <span className="font-bold text-white">{profile.location}</span></span>
+                            {/* 🎂 Birthday Section */}
+                            {profile.birthday && (
+                                <div className="flex items-center gap-3 text-gray-400 mb-6">
+                                    <div className="p-2 bg-pink-500/10 rounded-lg">
+                                        <Cake className="text-pink-500" size={18} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] uppercase font-black tracking-widest text-gray-500">Human Born On</span>
+                                        <span className="text-sm font-bold text-gray-200">
+                                            {new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-6">
+                                {/* Location */}
+                                {profile.location && (
+                                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
+                                        <MapPin style={{ color: vibeColor }} size={24} className="shrink-0" />
+                                        <span className="text-lg">Lives in <span className="font-bold text-white">{profile.location}</span></span>
+                                    </div>
+                                )}
+
+                                {/* Education */}
+                                {profile.education && (
+                                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
+                                        <GraduationCap style={{ color: vibeColor }} size={24} className="shrink-0" />
+                                        <span className="text-lg">Studied at <span className="font-bold text-white">{profile.education}</span></span>
+                                    </div>
+                                )}
+
+                                {/* Work */}
+                                {profile.work && (
+                                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
+                                        <Briefcase style={{ color: vibeColor }} size={24} className="shrink-0" />
+                                        <span className="text-lg">Works as <span className="font-bold text-white">{profile.work}</span></span>
+                                    </div>
+                                )}
+
+                                {/* Website */}
+                                {profile.website && (
+                                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
+                                        <LinkIcon style={{ color: vibeColor }} size={24} className="shrink-0" />
+                                        <a 
+                                            href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-lg font-bold text-white hover:underline truncate"
+                                        >
+                                            {profile.website.replace(/^https?:\/\//, '')}
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* මෙතන Edit Modal එක තිබුණු එක මම අයින් කළා, මොකද ඒක Cover Photo එක උඩ දැනටමත් තියෙනවා */}
+                        </div>
                     </div>
-                )}
-
-                {/* Education */}
-                {profile.education && (
-                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
-                        <GraduationCap style={{ color: vibeColor }} size={24} className="shrink-0" />
-                        <span className="text-lg">Studied at <span className="font-bold text-white">{profile.education}</span></span>
-                    </div>
-                )}
-
-                {/* Work */}
-                {profile.work && (
-                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
-                        <Briefcase style={{ color: vibeColor }} size={24} className="shrink-0" />
-                        <span className="text-lg">Works as <span className="font-bold text-white">{profile.work}</span></span>
-                    </div>
-                )}
-
-                {/* Website */}
-                {profile.website && (
-                    <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
-                        <LinkIcon style={{ color: vibeColor }} size={24} className="shrink-0" />
-                        <a 
-                            href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-lg font-bold text-white hover:underline truncate"
-                        >
-                            {profile.website.replace(/^https?:\/\//, '')}
-                        </a>
-                    </div>
-                )}
-            </div>
-
-            {isOwnProfile && (
-                <div className="mt-8 pt-6 border-t border-gray-800">
-                    <EditProfileModal profile={profile} />
-                </div>
-            )}
-        </div>
-    </div>
 
                     {/* CENTER: ACTIVITY (7 Columns) */}
                     <div className="lg:col-span-7 space-y-6">
