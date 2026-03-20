@@ -6,39 +6,36 @@ import { createClient } from '@/utils/supabase/client'
 import Image from 'next/image'
 
 export default function OnlineFriends({ currentUserId }: { currentUserId: string }) {
-  // ...
-}
     const [following, setFollowing] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const supabase = createClient()
 
     useEffect(() => {
         const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            if (!currentUserId) return;
 
-            if (user) {
-                const { data, error } = await supabase
-                    .from('follows')
-                    .select(`
-                        followed_id,
-                        profiles!followed_id (
-                            id,
-                            display_name,
-                            avatar_url,
-                            is_online
-                        )
-                    `)
-                    .eq('follower_id', user.id)
+            // 🚀 අපි කෙලින්ම currentUserId පාවිච්චි කරනවා
+            const { data, error } = await supabase
+                .from('follows')
+                .select(`
+                    followed_id,
+                    profiles!followed_id (
+                        id,
+                        display_name,
+                        avatar_url,
+                        is_online
+                    )
+                `)
+                .eq('follower_id', currentUserId) // මෙතනට currentUserId දැම්මා
 
-                if (!error && data) {
-                    setFollowing(data)
-                }
+            if (!error && data) {
+                setFollowing(data)
             }
             setLoading(false)
         }
 
         fetchData()
-    }, [supabase])
+    }, [currentUserId, supabase]) // dependency එකට currentUserId දැම්මා
 
     if (loading) return <div className="p-10 text-center animate-pulse text-gray-500 italic">Scanning the galaxy for connections...</div>
 
@@ -47,11 +44,8 @@ export default function OnlineFriends({ currentUserId }: { currentUserId: string
             {following.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                     {following.map((item) => {
-                        // 🛠️ මේක තමයි වැදගත්ම කොටස: 
-                        // Supabase එකෙන් profiles එන්නේ [ {..} ] (array) එකක් විදිහට නම් ඒකෙන් මුල්ම එක ගන්නවා.
                         const profile = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
-
-                        if (!profile) return null; // profile එක නැත්නම් මුකුත් පෙන්වන්න එපා
+                        if (!profile) return null;
 
                         return (
                             <Link 
