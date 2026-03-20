@@ -5,10 +5,10 @@ import { createClient } from '@/utils/supabase/client'
 import { ImagePlus, Loader2, X, Send, Video } from 'lucide-react' // 👈 Video icon එක ඇඩ් කළා
 
 interface CreatePostProps {
-    userId: string;
+    user: any;
 }
 
-export default function CreatePost({ userId }: CreatePostProps) {
+export default function CreatePost({ user }: CreatePostProps) {
     const [content, setContent] = useState('')
     const [image, setImage] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
