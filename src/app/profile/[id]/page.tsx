@@ -84,7 +84,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                             </button>
                         ) : (
                             <div className="flex gap-3">
-                                <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} initialIsFollowing={isFollowing} />
+                                <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} 
                                 <Link href={`/chat/${id}`} className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-2xl font-black transition-all">Message</Link>
                             </div>
                         )}
