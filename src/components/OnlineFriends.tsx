@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import Image from 'next/image'
 
-export default function FollowingList() {
+export default function OnlineFriends({ currentUserId }: { currentUserId: string }) {
+  // ...
+}
     const [following, setFollowing] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const supabase = createClient()
