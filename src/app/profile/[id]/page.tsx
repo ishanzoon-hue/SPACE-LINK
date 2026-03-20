@@ -6,15 +6,16 @@ import FriendButton from '@/components/post/FriendButton'
 import EditProfileModal from './EditProfileModal'
 import OnlineFollowers from '@/components/post/OnlineFollowers'
 import AdSection from '@/components/AdSection'
-// 🛠️ මෙතන මම imports ඔක්කොම එක පේළියකට ගත්තා (MapPin දෙපාරක් තිබුණ එක අයින් කළා)
 import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+    // 1. Params await කිරීම (Next.js 15+ සඳහා අනිවාර්යයි)
     const { id } = await params
     const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
 
+    // 2. ප්‍රොෆයිල් දත්ත ලබා ගැනීම
     const { data: profile, error } = await supabase
         .from('profiles')
         .select(`*, followers:follows!followed_id(count), following:follows!follower_id(count)`)
@@ -25,20 +26,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
     const vibeColor = profile.theme_color || '#10b981'
 
+    // 3. පෝස්ට් දත්ත ලබා ගැනීම
     const { data: posts } = await supabase
         .from('posts')
         .select(`*, author:profiles!user_id(display_name, avatar_url), likes(id), comments(count)`)
         .eq('user_id', id)
         .order('created_at', { ascending: false })
-
-    let isFollowing = false
-    if (currentUser && currentUser.id !== id) {
-        const { data: follow } = await supabase
-            .from('follows')
-            .select('follower_id')
-            .match({ follower_id: currentUser.id, followed_id: id }).single()
-        if (follow) isFollowing = true
-    }
 
     const isOwnProfile = currentUser?.id === id
 
@@ -84,45 +77,43 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                             </button>
                         ) : (
                             <div className="flex gap-3">
-                                <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} initialIsFollowing={isFollowing} />
+                                {/* ✅ Fix: initialIsFollowing prop එක අයින් කළා */}
+                                <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} />
                                 <Link href={`/chat/${id}`} className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-2xl font-black transition-all">Message</Link>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* 📍 CLASSIC 3-COLUMN GRID */}
+                {/* 📍 CONTENT GRID */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     
-                    {/* LEFT: INTRO (3 Columns) */}
+                    {/* LEFT: INTRO */}
                     <div className="lg:col-span-3">
                         <div className="bg-[#0F172A] p-6 rounded-[32px] border border-gray-800 sticky top-24 shadow-xl">
                             <h3 className="font-black text-3xl mb-6 uppercase tracking-tighter italic text-white">Intro</h3>
                             
-                            {/* Bio */}
                             {profile.bio && (
                                 <p className="text-center text-gray-300 mb-8 italic text-lg leading-relaxed border-b border-gray-800 pb-6">
                                     "{profile.bio}"
                                 </p>
                             )}
 
-                            {/* 🎂 Birthday Section */}
-                            {profile.birthday && (
-                                <div className="flex items-center gap-3 text-gray-400 mb-6">
-                                    <div className="p-2 bg-pink-500/10 rounded-lg">
-                                        <Cake className="text-pink-500" size={18} />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] uppercase font-black tracking-widest text-gray-500">Human Born On</span>
-                                        <span className="text-sm font-bold text-gray-200">
-                                            {new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
                             <div className="space-y-6">
-                                {/* Location */}
+                                {profile.birthday && (
+                                    <div className="flex items-center gap-3 text-gray-400 mb-6">
+                                        <div className="p-2 bg-pink-500/10 rounded-lg">
+                                            <Cake className="text-pink-500" size={18} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-gray-500">Human Born On</span>
+                                            <span className="text-sm font-bold text-gray-200">
+                                                {new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {profile.location && (
                                     <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
                                         <MapPin style={{ color: vibeColor }} size={24} className="shrink-0" />
@@ -130,7 +121,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                                     </div>
                                 )}
 
-                                {/* Education */}
                                 {profile.education && (
                                     <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
                                         <GraduationCap style={{ color: vibeColor }} size={24} className="shrink-0" />
@@ -138,7 +128,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                                     </div>
                                 )}
 
-                                {/* Work */}
                                 {profile.work && (
                                     <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
                                         <Briefcase style={{ color: vibeColor }} size={24} className="shrink-0" />
@@ -146,7 +135,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                                     </div>
                                 )}
 
-                                {/* Website */}
                                 {profile.website && (
                                     <div className="flex items-center gap-4 text-gray-300 hover:text-white transition-colors">
                                         <LinkIcon style={{ color: vibeColor }} size={24} className="shrink-0" />
@@ -161,28 +149,31 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                                     </div>
                                 )}
                             </div>
-
-                            {/* මෙතන Edit Modal එක තිබුණු එක මම අයින් කළා, මොකද ඒක Cover Photo එක උඩ දැනටමත් තියෙනවා */}
                         </div>
                     </div>
 
-                    {/* CENTER: ACTIVITY (7 Columns) */}
+                    {/* CENTER: ACTIVITY */}
                     <div className="lg:col-span-7 space-y-6">
                         <div className="flex items-center gap-3 mb-4">
                              <div className="w-2 h-10 rounded-full" style={{ backgroundColor: vibeColor }}></div>
-                             <h2 className="text-3xl font-black uppercase tracking-widest italic">Recent Activity</h2>
+                             <h2 className="text-3xl font-black uppercase tracking-widest italic">Timeline</h2>
                         </div>
                         <div className="space-y-6">
                             {posts && posts.map((post) => (
                                 <PostCard key={post.id} post={post} currentUserId={currentUser?.id} themeColor={vibeColor} />
                             ))}
+                            {posts?.length === 0 && (
+                                <div className="text-center py-20 bg-[#0F172A] rounded-[32px] border border-dashed border-gray-800">
+                                    <p className="text-gray-500 font-bold italic text-xl">No transmissions found on this frequency. 🛸</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* RIGHT: FRIENDS (2 Columns) */}
+                    {/* RIGHT: SIDEBAR */}
                     <div className="lg:col-span-2 hidden lg:block">
                         <div className="sticky top-24 space-y-6">
-                            <OnlineFollowers currentUserId={currentUser?.id || ''} />
+                            <OnlineFollowers currentUserId={id} />
                             <AdSection />
                         </div>
                     </div>
