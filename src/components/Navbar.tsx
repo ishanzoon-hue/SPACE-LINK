@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
-import SearchBar from './SearchBar' // 👈 මේක ඇතුළේ තමයි අර ලිස්ට් එක එන ලොජික් එක තියෙන්න ඕනේ
+import SearchBar from './SearchBar' 
 import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
@@ -29,9 +29,11 @@ export default async function Navbar() {
 
     return (
         <header className="bg-white dark:bg-[#0F172A] border-b border-gray-200 dark:border-gray-800 sticky top-0 z-[100] transition-colors">
+            
+            {/* 🏠 MAIN ROW: Logo + Desktop Search + Action Icons */}
             <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2 sm:gap-4">
                 
-                {/* 1. Logo - ෆෝන් එකේදී පොඩ්ඩක් කුඩා කළා ඉඩ ඉතුරු කරගන්න */}
+                {/* 1. Logo */}
                 <Link href="/" className="shrink-0 transition-opacity hover:opacity-80">
                     <div className="flex items-center">
                         <svg 
@@ -52,13 +54,12 @@ export default async function Navbar() {
                     </div>
                 </Link>
 
-                {/* 2. Search Bar - මෙතන තමයි අලුත් ලිස්ට් එක එන්නේ */}
-                {/* ෆෝන් එකේදී මීට වඩා ඉඩක් දුන්නා (flex-1) */}
-                <div className="flex-1 max-w-sm mx-1 sm:mx-4 relative">
+                {/* 2. Search Bar (Desktop Only) - md:block වලින් මොබයිල් එකේ හංගනවා */}
+                <div className="hidden md:block flex-1 max-w-sm mx-4 relative">
                     <SearchBar />
                 </div>
 
-                {/* 3. Action Icons - ඔයාගේ පරණ ඔක්කොම Icons එහෙම්ම තියෙනවා */}
+                {/* 3. Action Icons */}
                 <div 
                     className="flex items-center gap-1 sm:gap-3 shrink-0 overflow-x-auto no-scrollbar"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -91,6 +92,12 @@ export default async function Navbar() {
                     )}
                 </div>
             </div>
+
+            {/* 🔍 4. Mobile Search Bar - යට පේළිය (Desktop එකේ පේන්නේ නෑ) */}
+            <div className="md:hidden w-full px-4 pb-3">
+                <SearchBar />
+            </div>
+
         </header>
     )
 }

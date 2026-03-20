@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import toast from 'react-hot-toast'
+import Link from 'next/link'
 
 // 🎬 YouTube සහ TikTok ලින්ක්ස් වලට සපෝට් කරන Helper Function එක
 const getEmbedUrl = (url: string) => {
@@ -128,16 +129,24 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2" style={{ borderColor: themeColor }}>
-                        <img src={post.author?.avatar_url || '/default-avatar.png'} alt="avatar" className="w-full h-full object-cover" />
-                    </div>
+                    {/* 🔴 ෆොටෝ එක උඩ ක්ලික් කළාම ප්‍රොෆයිල් එකට යනවා */}
+                    <Link href={`/profile/${post.user_id}`}>
+                        <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2 cursor-pointer hover:scale-105 transition-transform" style={{ borderColor: themeColor }}>
+                            <img src={post.author?.avatar_url || '/default-avatar.png'} alt="avatar" className="w-full h-full object-cover" />
+                        </div>
+                    </Link>
                     <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white leading-tight">{post.author?.display_name}</h4>
+                        {/* 🔴 නම උඩ ක්ලික් කළාම ප්‍රොෆයිල් එකට යනවා */}
+                        <Link href={`/profile/${post.user_id}`}>
+                            <h4 className="font-bold text-gray-900 dark:text-white leading-tight cursor-pointer hover:underline" style={{ textDecorationColor: themeColor }}>
+                                {post.author?.display_name}
+                            </h4>
+                        </Link>
                         <p className="text-xs text-gray-500 uppercase font-bold tracking-tighter opacity-60">Posted Just Now</p>
                     </div>
                 </div>
             </div>
-
+            
             {/* Content Area */}
             <div className="mb-6">
                 <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed mb-4">{post.content}</p>
@@ -187,9 +196,13 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                         )}
                         {commentsList.map((comment) => (
                             <div key={comment.id} className="flex gap-3">
-                                <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full flex-shrink-0" alt="avatar" />
+                                <Link href={`/profile/${comment.user_id}`} className="shrink-0">
+                                    <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all" alt="avatar" />
+                                </Link>
                                 <div className="bg-gray-100 dark:bg-gray-800/60 p-3 rounded-2xl flex-1 text-sm">
-                                    <p className="font-bold text-gray-900 dark:text-white">{comment.profiles?.display_name}</p>
+                                    <Link href={`/profile/${comment.user_id}`}>
+                                        <p className="font-bold text-gray-900 dark:text-white cursor-pointer hover:underline">{comment.profiles?.display_name}</p>
+                                    </Link>
                                     <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
                                 </div>
                             </div>
