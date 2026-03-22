@@ -12,6 +12,18 @@ export default async function Home() {
   return (
     <div className="flex flex-col md:flex-row gap-6">
       <div className="flex-1 space-y-6">
+      <div className="w-full max-w-2xl mx-auto my-8 rounded-[40px] overflow-hidden border-4 border-blue-500/20 shadow-2xl shadow-blue-500/10">
+  <video 
+    autoPlay 
+    loop 
+    muted
+    playsInline 
+    className="w-full h-full object-cover"
+  >
+    <source src="/lmo-intro.mp4" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+</div>
         
         {/* 💳 මෙන්න Wallet එකට යන ලොකු බටන් එක */}
         <div className="bg-gradient-to-r from-blue-900/40 to-black border border-blue-500/30 p-6 rounded-[32px] flex flex-col md:flex-row items-center justify-between gap-4">
