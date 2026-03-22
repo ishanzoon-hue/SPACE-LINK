@@ -5,8 +5,7 @@ import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle' 
-// 🔴 1. ලස්සන, සමාන පෙනුමක් තියෙන Lucide Icons ටික ගත්තා
-import { Home, MessageSquare, User } from 'lucide-react'
+import { Home, MessageSquare, User, TrendingUp } from 'lucide-react'
 
 export default async function Navbar() {
     const supabase = await createClient()
@@ -29,11 +28,9 @@ export default async function Navbar() {
         notifications = data || []
     }
 
-    // 🔴 2. හැම අයිකන් එකකටම සමාන පෙනුමක් දෙන්න පොදු Class එකක් හැදුවා
     const iconBtnStyle = "p-2 sm:p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-gray-800 hover:text-emerald-500 transition-all flex items-center justify-center shrink-0 cursor-pointer"
 
     return (
-        // 🔴 3. Navbar එකට පොඩි Glass effect එකක් (backdrop-blur) දුන්නා Modern වෙන්න
         <header className="bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 sticky top-0 z-[100] transition-colors shadow-sm">
             
             <div className="max-w-7xl mx-auto px-4">
@@ -43,20 +40,14 @@ export default async function Navbar() {
                     {/* 1. Logo */}
                     <Link href="/" className="shrink-0 transition-all hover:opacity-90 group flex items-center gap-2">
                         <div className="relative p-0.5 rounded-2xl overflow-hidden bg-gradient-to-tr from-blue-600 via-purple-500 to-pink-500 shadow-lg group-hover:shadow-blue-500/50 transition-all duration-300">
-                            {/* ලෝගෝ එක වටේට තියෙන ලස්සන Border එක */}
                             <div className="bg-[#0F172A] rounded-[14px] p-1">
                                 <img 
-                                    src="/logo.png" /* 🔴 ඔයා පාවිච්චි කරන නම (logo.png / logo.jfif) හරියටම දෙන්න */
+                                    src="/logo.png" 
                                     alt="ELIMEN Logo" 
                                     className="h-10 sm:h-12 w-auto object-contain group-hover:scale-110 transition-transform duration-500"
                                 />
                             </div>
                         </div>
-                        
-                        {/* අවශ්‍ය නම් ලෝගෝ එකට එහා පැත්තෙන් අකුරුත් දාන්න පුළුවන් (Optional) */}
-                        {/* <span className="font-black text-xl tracking-tighter uppercase italic text-white group-hover:text-blue-400 transition-colors hidden sm:block">
-                            ELIMEN
-                        </span> */}
                     </Link>
 
                     {/* 2. Search Bar (Desktop Only) */}
@@ -64,16 +55,19 @@ export default async function Navbar() {
                         <SearchBar />
                     </div>
 
-                    {/* 3. Action Icons - ඔක්කොම එකම Pattern එකකට! */}
+                    {/* 3. Action Icons */}
                     <div 
                         className="flex items-center gap-1 sm:gap-2 shrink-0 overflow-x-auto no-scrollbar"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                         {user ? (
                             <>
-                                {/* 🔴 4. අර දිග SVG වෙනුවට ලස්සන Lucide Icons පාවිච්චි කළා */}
                                 <Link href="/" className={iconBtnStyle} title="Home">
                                     <Home size={22} strokeWidth={2.5} />
+                                </Link>
+
+                                <Link href="/market" className={iconBtnStyle} title="Live Market">
+                                    <TrendingUp size={22} strokeWidth={2.5} className="text-blue-500" />
                                 </Link>
 
                                 <Link href="/messages" className={iconBtnStyle} title="Messages">
@@ -84,10 +78,15 @@ export default async function Navbar() {
                                     <User size={22} strokeWidth={2.5} />
                                 </Link>
 
-                                {/* අනිත් Components ටික */}
-                                <div className="shrink-0 flex items-center justify-center"><NotificationBell notifications={notifications} /></div>
-                                <div className="shrink-0 flex items-center justify-center"><SettingsToggle /></div> 
-                                <div className="shrink-0 flex items-center justify-center"><ThemeToggle /></div>
+                                <div className="shrink-0 flex items-center justify-center">
+                                    <NotificationBell notifications={notifications} />
+                                </div>
+                                <div className="shrink-0 flex items-center justify-center">
+                                    <SettingsToggle />
+                                </div> 
+                                <div className="shrink-0 flex items-center justify-center">
+                                    <ThemeToggle />
+                                </div>
                                 
                                 <div className="shrink-0 flex items-center justify-center ml-1 pl-1 border-l border-gray-200 dark:border-gray-800">
                                     <SignOutButton />
