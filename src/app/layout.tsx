@@ -23,10 +23,39 @@ export const viewport: Viewport = {
   maximumScale: 1, 
 };
 
-// ✅ Apple ෆෝන් එකේ ලෝගෝ එක පේන්න අලුතින් 'icons' කෑල්ල ඇඩ් කළා!
+// ✅ අලුත් SEO සෙටින්ග්ස් + කලින් තිබ්බ Apple PWA සෙටින්ග්ස් එකට එකතු කළා!
 export const metadata: Metadata = {
-  title: "SPACE LINK",
-  description: "Social Media Platform",
+  title: "Elimen | The Next-Gen Web3 Social Platform",
+  description: "Join Elimen, the ultimate Web3 social network. Claim your 100 LMO bonus now, connect with friends, and manage your LMO wallet securely.",
+  keywords: ["Elimen", "Web3", "Social Media", "LMO Token", "Crypto Wallet", "Space Link"],
+  
+  // Facebook, WhatsApp වගේ ඒවගේ ලින්ක් එක ෂෙයාර් කරද්දි පේන විදිහ
+  openGraph: {
+    title: "Elimen | The Next-Gen Web3 Social Platform",
+    description: "Join Elimen, the ultimate Web3 social network. Claim your 100 LMO bonus now!",
+    url: "https://www.elimeno.live",
+    siteName: "Elimen",
+    images: [
+      {
+        url: "https://www.elimeno.live/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "Elimen Web3 Social Platform",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  
+  // Twitter (X) වල ෂෙයාර් කරද්දි
+  twitter: {
+    card: "summary_large_image",
+    title: "Elimen | Claim your 100 LMO Bonus!",
+    description: "Join Elimen, the ultimate Web3 social network. Claim your 100 LMO bonus now!",
+    images: ["https://www.elimeno.live/logo.png"],
+  },
+
+  // Apple ෆෝන් සහ PWA (Install) සෙටින්ග්ස් (කිසිම වෙනසක් කරේ නෑ, නම විතරක් හැදුවා)
   manifest: "/manifest.webmanifest", 
   icons: {
     icon: "/icon.png",      // 👈 සාමාන්‍ය Android/PC වලට
@@ -35,7 +64,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Space Link",
+    title: "Elimen", // 👈 මෙතනත් අලුත් නම දැම්මා
   },
   formatDetection: {
     telephone: false,
