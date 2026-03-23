@@ -5,7 +5,7 @@ import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle' 
-import { Home, MessageSquare, User, TrendingUp } from 'lucide-react'
+import { Home, MessageSquare, User, TrendingUp, Trophy } from 'lucide-react' // ✅ Trophy එක මෙතනට ඇඩ් කළා
 
 export default async function Navbar() {
     const supabase = await createClient()
@@ -64,6 +64,11 @@ export default async function Navbar() {
                             <>
                                 <Link href="/" className={iconBtnStyle} title="Home">
                                     <Home size={22} strokeWidth={2.5} />
+                                </Link>
+
+                                {/* ✅ අලුත් Leaderboard කුසලානය මෙතනට දැම්මා! */}
+                                <Link href="/leaderboard" className={iconBtnStyle} title="Leaderboard">
+                                    <Trophy size={22} strokeWidth={2.5} className="text-yellow-500 drop-shadow-sm hover:scale-110 transition-transform" />
                                 </Link>
 
                                 <Link href="/market" className={iconBtnStyle} title="Live Market">
