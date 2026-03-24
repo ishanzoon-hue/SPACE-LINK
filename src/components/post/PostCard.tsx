@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Heart, MessageCircle, Share2, MoreHorizontal, Send } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Send, Trash2 } from 'lucide-react' // ✅ Trash2 අයිකන් එක ගත්තා
 import { createClient } from '@/utils/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation' // ✅ පේජ් එක රිෆ්‍රෙෂ් කරන්න ගත්තා
 
 // 🎬 YouTube සහ TikTok ලින්ක්ස් වලට සපෝට් කරන Helper Function එක
 const getEmbedUrl = (url: string) => {
@@ -29,11 +30,14 @@ interface PostCardProps {
 
 export default function PostCard({ post, currentUserId, themeColor = '#10b981' }: PostCardProps) {
     const supabase = createClient()
+    const router = useRouter() // අලුතින් දැම්මා
+    
     const [isLiked, setIsLiked] = useState(false)
     const [likesCount, setLikesCount] = useState(0)
     const [showComments, setShowComments] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [commentsList, setCommentsList] = useState<any[]>([])
+    const [isDeleting, setIsDeleting] = useState(false) // ✅ Delete වෙන වෙලාවට ලෝඩ් වෙන්න
 
     // 🎬 Video URL එක ගන්න Variable එක
     const embedUrl = post?.video_url ? getEmbedUrl(post.video_url) : null;
@@ -56,13 +60,10 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
 
         try {
             if (originalIsLiked) {
-                // ලයික් එක අයින් කරනවා
                 await supabase.from('likes').delete().match({ post_id: post.id, user_id: currentUserId })
             } else {
-                // ලයික් එක දානවා
                 await supabase.from('likes').insert([{ post_id: post.id, user_id: currentUserId }])
                 
-                // 🔔 ලයික් එකට නොටිෆිකේෂන් එකක් යවනවා
                 const postOwnerId = post.user_id || post.author?.id || post.author_id; 
                 if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
                     await supabase.from('notifications').insert([{
@@ -111,7 +112,6 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
             fetchComments()
             toast.success('Comment posted! 💬')
             
-            // 🔔 කමෙන්ට් එකට නොටිෆිකේෂන් එකක් යවනවා
             const postOwnerId = post.user_id || post.author?.id || post.author_id;
             if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
                 await supabase.from('notifications').insert([{
@@ -145,8 +145,42 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
         }
     }
 
+    // 🗑️ 5. Post එක මකන අලුත්ම ෆන්ක්ෂන් එක!
+    const handleDeletePost = async () => {
+        // මකන්න කලින් ඇත්තටම මකනවද කියලා අහනවා
+        if (!window.confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+
+        setIsDeleting(true);
+        try {
+            // Storage එකේ ෆොටෝ එකක් තියෙනවා නම් ඒක අයින් කරන්න ට්‍රයි කරනවා
+            if (post.image_url) {
+                // සරලව ෆයිල් එකේ නම වෙන් කරලා ගන්නවා
+                const fileName = post.image_url.split('/').pop();
+                if (fileName) {
+                    await supabase.storage.from('posts').remove([fileName]); 
+                }
+            }
+
+            // Database එකෙන් පෝස්ට් එක මකනවා (Comments, Likes ඔක්කොම ඔටෝ මැකෙයි)
+            const { error } = await supabase.from('posts').delete().eq('id', post.id);
+
+            if (error) throw error;
+
+            toast.success('Post deleted successfully! 🗑️');
+            
+            // පේජ් එක රිෆ්‍රෙෂ් කරලා Feed එක අප්ඩේට් කරනවා
+            router.refresh();
+        } catch (error) {
+            console.error("Error deleting post:", error);
+            toast.error('Failed to delete post.');
+        } finally {
+            setIsDeleting(false);
+        }
+    }
+
     return (
-        <div className="bg-white dark:bg-[#0F172A] rounded-[32px] p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all mb-5">
+        <div className="bg-white dark:bg-[#0F172A] rounded-[32px] p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all mb-5 relative group">
+            
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -164,6 +198,18 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                         <p className="text-xs text-gray-500 uppercase font-bold tracking-tighter opacity-60">Posted Just Now</p>
                     </div>
                 </div>
+
+                {/* 🗑️ Delete Button එක (අයිතිකාරයාට විතරක් පේන්න) */}
+                {currentUserId === post.user_id && (
+                    <button 
+                        onClick={handleDeletePost}
+                        disabled={isDeleting}
+                        className={`p-2 rounded-full transition-all flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 ${isDeleting ? 'opacity-50 cursor-not-allowed' : 'opacity-0 group-hover:opacity-100'}`}
+                        title="Delete Post"
+                    >
+                        <Trash2 size={20} className={isDeleting ? 'animate-pulse' : ''} />
+                    </button>
+                )}
             </div>
             
             {/* Content Area */}
@@ -205,7 +251,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
                     <span className="font-bold text-lg">{commentsList.length || post.comments?.[0]?.count || 0}</span>
                 </button>
 
-                {/* 🚀 අලුත් Share Button එක */}
+                {/* 🚀 Share Button එක */}
                 <button onClick={handleShare} className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-all ml-auto hover:scale-110">
                     <Share2 size={24} />
                 </button>
