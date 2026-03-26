@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { Loader2 } from 'lucide-react' // ✅ Loading spinner එකට මේක ගත්තා
+import { Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
     const [email, setEmail] = useState('')
@@ -27,7 +27,8 @@ export default function LoginPage() {
             setLoading(false)
         } else {
             toast.success('Welcome back to Elimen! 🚀')
-            router.push('/') // ලොග් වුණාට පස්සේ Home එකට යවනවා
+            // ✅ මෙතන තමයි වෙනස් කළේ (Full Reload එකක් දීලා Home එකට යවනවා)
+            window.location.href = '/' 
         }
     }
 
@@ -90,7 +91,7 @@ export default function LoginPage() {
                             </Link>
                         </div>
 
-                        {/* Create Account Button (Green just like FB) */}
+                        {/* Create Account Button */}
                         <div className="pt-6 text-center">
                             <Link href="/register" className="inline-block bg-[#42b72a] text-white font-bold text-lg rounded-md px-6 py-3.5 hover:bg-[#36a420] transition-colors">
                                 Create new account
