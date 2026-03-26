@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Heart, MessageCircle, Share2, Send, Trash2 } from 'lucide-react' // ✅ Trash2 අයිකන් එක ගත්තා
+import { Heart, MessageCircle, Share2, Send, Trash2 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation' // ✅ පේජ් එක රිෆ්‍රෙෂ් කරන්න ගත්තා
+import { useRouter } from 'next/navigation'
 
 // 🎬 YouTube සහ TikTok ලින්ක්ස් වලට සපෝට් කරන Helper Function එක
 const getEmbedUrl = (url: string) => {
@@ -30,14 +30,14 @@ interface PostCardProps {
 
 export default function PostCard({ post, currentUserId, themeColor = '#10b981' }: PostCardProps) {
     const supabase = createClient()
-    const router = useRouter() // අලුතින් දැම්මා
+    const router = useRouter()
     
     const [isLiked, setIsLiked] = useState(false)
     const [likesCount, setLikesCount] = useState(0)
     const [showComments, setShowComments] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [commentsList, setCommentsList] = useState<any[]>([])
-    const [isDeleting, setIsDeleting] = useState(false) // ✅ Delete වෙන වෙලාවට ලෝඩ් වෙන්න
+    const [isDeleting, setIsDeleting] = useState(false)
 
     // 🎬 Video URL එක ගන්න Variable එක
     const embedUrl = post?.video_url ? getEmbedUrl(post.video_url) : null;
@@ -50,7 +50,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
         }
     }, [currentUserId, post.likes])
 
-    // ✅ 1. ලයික් එක දාන ෆන්ක්ෂන් එක
+    // ✅ 1. ලයික් එක දාන ෆන්ක්ෂන් එක (Error Check කරන කෑලිත් එක්ක)
     const handleLike = async () => {
         if (!currentUserId) return toast.error("Please login to like!")
 
@@ -62,25 +62,38 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
             if (originalIsLiked) {
                 await supabase.from('likes').delete().match({ post_id: post.id, user_id: currentUserId })
             } else {
-                await supabase.from('likes').insert([{ post_id: post.id, user_id: currentUserId }])
+                // මුලින්ම ලයික් එක දානවා
+                const { error: likeError } = await supabase.from('likes').insert([{ post_id: post.id, user_id: currentUserId }])
+                if (likeError) throw likeError;
                 
                 const postOwnerId = post.user_id || post.author?.id || post.author_id; 
+                
+                // ඊළඟට Notification එක යවනවා
                 if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
-                    await supabase.from('notifications').insert([{
+                    const { error: notifError } = await supabase.from('notifications').insert([{
                         user_id: postOwnerId,
+                        receiver_id: postOwnerId,
+                        sender_id: currentUserId,
                         from_user_id: currentUserId,
                         type: 'like',
                         post_id: post.id
                     }])
+                    
+                    // 🚨 අවුලක් ගියොත් හරියටම අල්ලගන්න තැන
+                    if (notifError) {
+                        console.error("Notification Error:", notifError);
+                        toast.error("Notif Error: " + notifError.message); 
+                    }
                 }
                 toast.success('Liked! ❤️')
             }
 
             const { data } = await supabase.from('likes').select('id').eq('post_id', post.id)
             if (data) setLikesCount(data.length)
-        } catch (error) {
+        } catch (error: any) {
             setIsLiked(originalIsLiked)
-            toast.error("Something went wrong")
+            toast.error("Error: " + error.message)
+            console.error(error)
         }
     }
 
@@ -98,29 +111,39 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
         if (showComments) fetchComments()
     }, [showComments])
 
-    // ✅ 3. කමෙන්ට් එකක් දාන ෆන්ක්ෂන් එක
+    // ✅ 3. කමෙන්ට් එකක් දාන ෆන්ක්ෂන් එක (Error Check කරන කෑලිත් එක්ක)
     const handleCommentSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!commentText.trim() || !currentUserId) return
 
-        const { error } = await supabase
+        const { error: commentError } = await supabase
             .from('comments')
             .insert([{ post_id: post.id, user_id: currentUserId, content: commentText }])
 
-        if (!error) {
+        if (!commentError) {
             setCommentText('')
             fetchComments()
             toast.success('Comment posted! 💬')
             
             const postOwnerId = post.user_id || post.author?.id || post.author_id;
             if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
-                await supabase.from('notifications').insert([{
+                const { error: notifError } = await supabase.from('notifications').insert([{
                     user_id: postOwnerId,
+                    receiver_id:postOwnerId,
+                    sender_id: currentUserId,
                     from_user_id: currentUserId,
                     type: 'comment',
                     post_id: post.id
                 }])
+                
+                // 🚨 අවුලක් ගියොත් අල්ලගන්න තැන
+                if (notifError) {
+                    console.error("Notification Error:", notifError);
+                    toast.error("Notif Error: " + notifError.message);
+                }
             }
+        } else {
+            toast.error("Failed to post comment");
         }
     }
 
@@ -147,28 +170,23 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981' }
 
     // 🗑️ 5. Post එක මකන අලුත්ම ෆන්ක්ෂන් එක!
     const handleDeletePost = async () => {
-        // මකන්න කලින් ඇත්තටම මකනවද කියලා අහනවා
         if (!window.confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
 
         setIsDeleting(true);
         try {
-            // Storage එකේ ෆොටෝ එකක් තියෙනවා නම් ඒක අයින් කරන්න ට්‍රයි කරනවා
             if (post.image_url) {
-                // සරලව ෆයිල් එකේ නම වෙන් කරලා ගන්නවා
                 const fileName = post.image_url.split('/').pop();
                 if (fileName) {
                     await supabase.storage.from('posts').remove([fileName]); 
                 }
             }
 
-            // Database එකෙන් පෝස්ට් එක මකනවා (Comments, Likes ඔක්කොම ඔටෝ මැකෙයි)
             const { error } = await supabase.from('posts').delete().eq('id', post.id);
 
             if (error) throw error;
 
             toast.success('Post deleted successfully! 🗑️');
             
-            // පේජ් එක රිෆ්‍රෙෂ් කරලා Feed එක අප්ඩේට් කරනවා
             router.refresh();
         } catch (error) {
             console.error("Error deleting post:", error);
