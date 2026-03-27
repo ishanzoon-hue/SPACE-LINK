@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "next-themes"; 
 import { SettingsProvider } from "@/context/SettingsContext";
+import { NotificationProvider } from '@/context/NotificationContext'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,10 +22,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: true, // 👈 User can zoom (accessibility)
+  userScalable: true,
 };
 
-// SEO Settings + PWA Settings
 export const metadata: Metadata = {
   title: "Elimen | The Next-Gen Web3 Social Platform",
   description: "Join Elimen, the ultimate Web3 social network. Claim your 100 LMO bonus now, connect with friends, and manage your LMO wallet securely.",
@@ -92,14 +92,15 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SettingsProvider>
-            <Toaster position="bottom-right" reverseOrder={false} />
-            <Navbar />
-            
-            {/* 👇 Mobile-optimized main container */}
-            <main className="w-full max-w-md mx-auto px-4 sm:px-6 md:max-w-2xl lg:max-w-4xl pt-4 pb-20">
-              {children}
-            </main>
-            
+            <NotificationProvider>   {/* 👈 Add NotificationProvider here */}
+              <Toaster position="bottom-right" reverseOrder={false} />
+              <Navbar />
+              
+              {/* Mobile-optimized main container */}
+              <main className="w-full max-w-md mx-auto px-4 sm:px-6 md:max-w-2xl lg:max-w-4xl pt-4 pb-20">
+                {children}
+              </main>
+            </NotificationProvider>
           </SettingsProvider>
         </ThemeProvider>
       </body>
