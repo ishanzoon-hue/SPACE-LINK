@@ -1,118 +1,94 @@
-'use client' // 👈 මේක අනිවාර්යයි බට්න් වැඩ කරන්න
+'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client' // 👈 Client එක ගත්තා
+import { createClient } from '@/utils/supabase/client'
+import { UserPlus, Sparkles } from 'lucide-react'
 
-export default function FollowingList() {
-  const [following, setFollowing] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  
-  const supabase = createClient()
-  const router = useRouter()
+export default function FollowingList({ currentUserId }: { currentUserId: string }) {
+    const [users, setUsers] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
+    const supabase = createClient()
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // 1. දැනට ලොග් වෙලා ඉන්න යූසර්ව ගන්නවා
-      const { data: { user } } = await supabase.auth.getUser()
-      setCurrentUser(user)
-
-      if (user) {
-        // 2. Following ලිස්ට් එක ගන්නවා
-        const { data, error } = await supabase
-          .from('follows')
-          .select(`
-            followed_id,
-            profiles!followed_id (
-              display_name,
-              avatar_url
-            )
-          `)
-          .eq('follower_id', user.id)
-
-        if (!error && data) {
-          setFollowing(data)
-        }
-      }
-      setLoading(false)
-    }
-    fetchData()
-  }, [])
-
-  // 📞 වීඩියෝ කෝල් එක පටන් ගන්න Function එක
-  const startVideoCall = async (friendId: string) => {
-    if (!currentUser) return
-
-    // Supabase 'calls' ටේබල් එකට රෙකෝඩ් එකක් දානවා (එතකොට තමයි යාලුවාට රින්ග් වෙන්නේ)
-    const { error } = await supabase.from('calls').insert({
-      caller_id: currentUser.id,
-      receiver_id: friendId,
-      status: 'ringing'
-    })
-
-    if (!error) {
-      // කෝල් පේජ් එකට යනවා (Backticks පාවිච්චි කරලා තියෙන්නේ)
-      router.push(`/video-call/${friendId}`)
-    } else {
-      alert("Call start failed: " + error.message)
-    }
-  }
-
-  if (loading) return <div className="p-4 text-gray-400">Loading friends...</div>
-  if (!following || following.length === 0) {
-    return <div className="p-4 text-gray-500 text-sm">You are not following anyone yet.</div>
-  }
-
-  return (
-    <div className="p-4 bg-[#1e2738] rounded-lg shadow w-full text-white">
-      <h2 className="font-bold text-lg mb-4">Following</h2>
-      <ul className="flex flex-col gap-4">
-        {following.map((follow: any) => (
-          <li key={follow.followed_id} className="flex items-center justify-between gap-3 group">
+    useEffect(() => {
+        const fetchUsers = async () => {
+            setLoading(true)
             
-            {/* ෆොටෝ එක සහ නම */}
-            <div className="flex items-center gap-3">
-              <img
-                src={follow.profiles?.avatar_url || 'https://via.placeholder.com/40'}
-                alt="avatar"
-                className="w-10 h-10 rounded-full object-cover border border-gray-600"
-              />
-              <span className="font-medium text-gray-200">
-                {follow.profiles?.display_name || 'Unknown User'}
-              </span>
+            // 🚀 සරලම Query එක: profiles ටේබල් එකේ ඉන්න ඕනෑම 10 දෙනෙක්ව ගන්නවා
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, display_name, avatar_url') 
+                .limit(10)
+
+            if (error) {
+                console.error("Supabase Error:", error.message)
+            }
+
+            if (data) {
+                // තමන්ගේම නම අයින් කරලා අනිත් අයව පෙන්වනවා
+                const others = data.filter(u => u.id !== currentUserId)
+                setUsers(others)
+            }
+            setLoading(false)
+        }
+
+        fetchUsers()
+    }, [currentUserId])
+
+    const formatName = (name: string) => {
+        if (!name) return 'Space User';
+        return name.includes('@') ? name.split('@')[0] : name;
+    };
+
+    if (loading) return (
+        <div className="w-full bg-[#1E293B]/40 rounded-[32px] p-8 border border-white/5 text-center animate-pulse">
+            <p className="text-[10px] text-emerald-500 uppercase tracking-[0.3em] font-black">Scanning Space...</p>
+        </div>
+    )
+
+    return (
+        <div className="w-full bg-[#1E293B]/40 rounded-[32px] p-6 border border-white/5 shadow-2xl backdrop-blur-md">
+            <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-6 px-1 flex items-center gap-2">
+                <Sparkles size={12} className="animate-pulse" />
+                Suggested Friends
+            </h3>
+            
+            <div className="flex flex-col gap-5">
+                {users.length > 0 ? (
+                    users.map((user) => (
+                        <div key={user.id} className="flex items-center justify-between group">
+                            <Link href={`/profile/${user.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="w-11 h-11 rounded-full border-2 border-gray-800 group-hover:border-emerald-500 overflow-hidden bg-gray-900 flex items-center justify-center shrink-0 transition-all">
+                                    {user.avatar_url ? (
+                                        <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-emerald-500 font-black text-sm">
+                                            {formatName(user.display_name).charAt(0).toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="truncate pr-2">
+                                    <p className="text-sm font-bold text-gray-200 group-hover:text-emerald-400 transition-colors truncate">
+                                        {formatName(user.display_name)}
+                                    </p>
+                                    <p className="text-[10px] text-gray-500 font-medium">
+                                        @{formatName(user.display_name).toLowerCase()}
+                                    </p>
+                                </div>
+                            </Link>
+                            
+                            <Link href={`/profile/${user.id}`} className="p-2 text-gray-500 hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all">
+                                <UserPlus size={18} />
+                            </Link>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center py-4">
+                        <p className="text-[10px] text-gray-600 italic">No humans detected 🛸</p>
+                        <p className="text-[8px] text-gray-700 mt-2 uppercase">Check Profiles Table in Supabase</p>
+                    </div>
+                )}
             </div>
-
-            {/* බට්න් දෙක */}
-            <div className="flex items-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-              
-              {/* Message Button */}
-              <Link 
-                href={`/chat/${follow.followed_id}`}
-                className="p-2 bg-blue-500/20 text-blue-400 rounded-full hover:bg-blue-500 hover:text-white transition-colors block"
-                title="Send Message"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                </svg>
-              </Link>
-
-              {/* Call Button - දැන් මේක වැඩ! ✅ */}
-              <button 
-                onClick={() => startVideoCall(follow.followed_id)}
-                className="p-2 bg-green-500/20 text-green-400 rounded-full hover:bg-green-500 hover:text-white transition-colors"
-                title="Start Video Call"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </button>
-            </div>
-
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
+        </div>
+    )
 }
