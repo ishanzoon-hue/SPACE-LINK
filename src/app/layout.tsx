@@ -20,16 +20,16 @@ export const viewport: Viewport = {
   themeColor: "#10b981",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1, 
+  maximumScale: 1,
+  userScalable: true, // 👈 User can zoom (accessibility)
 };
 
-// ✅ අලුත් SEO සෙටින්ග්ස් + කලින් තිබ්බ Apple PWA සෙටින්ග්ස් එකට එකතු කළා!
+// SEO Settings + PWA Settings
 export const metadata: Metadata = {
   title: "Elimen | The Next-Gen Web3 Social Platform",
   description: "Join Elimen, the ultimate Web3 social network. Claim your 100 LMO bonus now, connect with friends, and manage your LMO wallet securely.",
   keywords: ["Elimen", "Web3", "Social Media", "LMO Token", "Crypto Wallet", "Space Link"],
   
-  // Facebook, WhatsApp වගේ ඒවගේ ලින්ක් එක ෂෙයාර් කරද්දි පේන විදිහ
   openGraph: {
     title: "Elimen | The Next-Gen Web3 Social Platform",
     description: "Join Elimen, the ultimate Web3 social network. Claim your 100 LMO bonus now!",
@@ -47,7 +47,6 @@ export const metadata: Metadata = {
     type: "website",
   },
   
-  // Twitter (X) වල ෂෙයාර් කරද්දි
   twitter: {
     card: "summary_large_image",
     title: "Elimen | Claim your 100 LMO Bonus!",
@@ -55,16 +54,15 @@ export const metadata: Metadata = {
     images: ["https://www.elimeno.live/logo.png"],
   },
 
-  // Apple ෆෝන් සහ PWA (Install) සෙටින්ග්ස් (කිසිම වෙනසක් කරේ නෑ, නම විතරක් හැදුවා)
   manifest: "/manifest.webmanifest", 
   icons: {
-    icon: "/icon.png",      // 👈 සාමාන්‍ය Android/PC වලට
-    apple: "/icon.png",     // 👈 🍎 අන්න iPhone එකේ Home Screen ලෝගෝ එක!
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Elimen", // 👈 මෙතනත් අලුත් නම දැම්මා
+    title: "Elimen",
   },
   formatDetection: {
     telephone: false,
@@ -79,18 +77,30 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning> 
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white dark:bg-[#0F172A] text-gray-900 dark:text-gray-100 transition-colors`}
+        className={`
+          ${geistSans.variable} 
+          ${geistMono.variable} 
+          antialiased 
+          min-h-screen 
+          overflow-x-hidden
+          bg-white 
+          dark:bg-[#0F172A] 
+          text-gray-900 
+          dark:text-gray-100 
+          transition-colors
+        `}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          
           <SettingsProvider>
             <Toaster position="bottom-right" reverseOrder={false} />
             <Navbar />
-            <main>
+            
+            {/* 👇 Mobile-optimized main container */}
+            <main className="w-full max-w-md mx-auto px-4 sm:px-6 md:max-w-2xl lg:max-w-4xl pt-4 pb-20">
               {children}
             </main>
+            
           </SettingsProvider>
-
         </ThemeProvider>
       </body>
     </html>
