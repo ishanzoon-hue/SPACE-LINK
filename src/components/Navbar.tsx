@@ -5,7 +5,7 @@ import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle' 
-import { Home, MessageSquare, User, TrendingUp, Trophy, Radio } from 'lucide-react'
+import { Home, MessageSquare, User, TrendingUp, Trophy, Radio, Coins } from 'lucide-react' // 🪙 Coins අයිකන් එක ගෙනාවා
 import MobileMenu from './MobileMenu'
 
 export default async function Navbar() {
@@ -15,22 +15,27 @@ export default async function Navbar() {
     } = await supabase.auth.getUser()
 
     let notifications = []
+    let lmoBalance = 0 // 💸 බැලන්ස් එක සේව් කරගන්න Variable එක
+
     if (user) {
-        const { data, error } = await supabase
+        // 1. Notifications ගන්නවා
+        const { data: notifData, error: notifError } = await supabase
             .from('notifications')
-            .select(`
-                *,
-                from_user:profiles!sender_id(display_name, avatar_url),
-                post:posts!post_id(content)
-            `)
+            .select(`*, from_user:profiles!sender_id(display_name, avatar_url), post:posts!post_id(content)`)
             .eq('receiver_id', user.id)
             .order('created_at', { ascending: false })
             .limit(10)
             
-        if (error) {
-            console.error("Navbar Notification Error:", error)
-        }
-        notifications = data || []
+        if (!notifError) notifications = notifData || []
+
+        // 2. 💸 User ගේ LMO Balance එක Database එකෙන් ගන්නවා
+        const { data: profileData } = await supabase
+            .from('profiles')
+            .select('lmo_balance')
+            .eq('id', user.id)
+            .single()
+
+        lmoBalance = profileData?.lmo_balance || 0
     }
 
     const iconBtnStyle = "p-2 sm:p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-gray-800 hover:text-emerald-500 transition-all flex items-center justify-center shrink-0 cursor-pointer min-h-[44px] min-w-[44px]"
@@ -39,7 +44,6 @@ export default async function Navbar() {
 
     return (
         <header className="bg-white/90 dark:bg-[#0F172A]/90 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 sticky top-0 z-[100] transition-colors shadow-sm">
-            
             <div className="w-full max-w-7xl mx-auto px-3 sm:px-4">
                 <div className="h-14 sm:h-16 flex items-center justify-between gap-2">
                     
@@ -59,11 +63,16 @@ export default async function Navbar() {
                     <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                         {user ? (
                             <>
-                                {/* Desktop Icons (Phone එකේදී මේ ටික හැංගෙනවා) */}
+                                {/* 💸 LMO Balance Badge (Mobile & Desktop) */}
+                                <div className="flex items-center gap-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 px-3 py-1.5 rounded-full transition-all mr-1 sm:mr-3 cursor-default shadow-[0_0_10px_rgba(234,179,8,0.1)]">
+                                    <Coins size={16} className="text-yellow-500" />
+                                    <span className="text-yellow-500 font-black text-sm sm:text-base">{lmoBalance}</span>
+                                </div>
+
+                                {/* Desktop Icons */}
                                 <div className="hidden sm:flex items-center gap-0.5 sm:gap-1">
                                     <NavIcon href="/" icon={<Home size={20} />} tooltip="Home" />
                                     
-                                    {/* 🔴 LIVE Stream Button (Desktop) */}
                                     <div className="relative group">
                                         <Link href="/live" className={`${iconBtnStyle} hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500`}>
                                             <Radio size={20} className="animate-pulse" />
@@ -99,7 +108,7 @@ export default async function Navbar() {
                                     </div>
                                 </div>
 
-                                {/* 🔴 Mobile LIVE Stream Button (Phone එකේ විතරක් පේන්න) */}
+                                {/* Mobile LIVE Stream Button */}
                                 <Link href="/live" className="sm:hidden relative p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-all flex items-center justify-center mr-1">
                                     <Radio size={22} className="animate-pulse" />
                                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
@@ -132,7 +141,6 @@ export default async function Navbar() {
     )
 }
 
-// ✅ NavIcon Component - Reusable
 function NavIcon({ href, icon, tooltip }: { href: string; icon: React.ReactNode; tooltip: string }) {
     const iconBtnStyle = "p-2 sm:p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-gray-800 hover:text-emerald-500 transition-all flex items-center justify-center shrink-0 cursor-pointer min-h-[44px] min-w-[44px]"
     const tooltipStyle = "absolute top-full mt-1.5 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap shadow-xl pointer-events-none z-[120] hidden sm:block"

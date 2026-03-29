@@ -1,77 +1,140 @@
+'use client'
+
 import { signup } from './actions'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useFormStatus } from 'react-dom'
+import { Suspense } from 'react'
+import { Loader2, Mail, Lock, User as UserIcon, Rocket, Sparkles, ShieldCheck } from 'lucide-react'
 
-export default async function SignupPage({
-    searchParams,
-}: {
-    searchParams: Promise<{ error?: string }>
-}) {
-    const error = (await searchParams)?.error
+// ⏳ Loading වෙනකොට බටන් එක වෙනස් වෙන කෑල්ල (Submit Button)
+function SubmitButton() {
+    const { pending } = useFormStatus()
     return (
-        <div className="min-h-screen flex items-center justify-center bg-spl-gray dark:bg-[#020817] p-4 transition-colors">
-            <div className="max-w-md w-full bg-white dark:bg-[#0F172A] rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-800 transition-colors">
+        <button
+            type="submit"
+            disabled={pending}
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black py-3.5 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(52,211,153,0.3)] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-6"
+        >
+            {pending ? (
+                <><Loader2 className="animate-spin" size={20} /> Launching Orbit...</>
+            ) : (
+                <><Rocket size={20} /> Create Account</>
+            )}
+        </button>
+    )
+}
+
+// 📝 Form එකේ ඇතුලේ කෑල්ල
+function SignupForm() {
+    const searchParams = useSearchParams()
+    const error = searchParams.get('error')
+    const refCode = searchParams.get('ref') // 🎁 Referral ලින්ක් එකෙන් එන ID එක අල්ලගන්නවා
+
+    return (
+        <form action={signup} className="space-y-4">
+            
+            {/* 🎁 මේකෙන් තමයි backend එකට referral ID එක යවන්නේ (හංගලා තියෙන්නේ) */}
+            {refCode && <input type="hidden" name="ref" value={refCode} />}
+
+            {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-500 rounded-xl text-sm text-center font-bold flex items-center justify-center gap-2">
+                    {error}
+                </div>
+            )}
+
+            {refCode && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs text-center font-bold flex items-center justify-center gap-2 mb-4">
+                    <Gift size={16} /> You've been invited! You will get a 50 LMO bonus. 🎉
+                </div>
+            )}
+
+            {/* Display Name */}
+            <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Display Name</label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <UserIcon size={18} className="text-gray-400" />
+                    </div>
+                    <input
+                        type="text"
+                        name="displayName"
+                        required
+                        placeholder="Space Explorer"
+                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
+                    />
+                </div>
+            </div>
+
+            {/* Email */}
+            <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Email Address</label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail size={18} className="text-gray-400" />
+                    </div>
+                    <input
+                        type="email"
+                        name="email"
+                        required
+                        placeholder="you@orbit.com"
+                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
+                    />
+                </div>
+            </div>
+
+            {/* Password */}
+            <div className="space-y-1.5">
+                <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Password</label>
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock size={18} className="text-gray-400" />
+                    </div>
+                    <input
+                        type="password"
+                        name="password"
+                        required
+                        placeholder="••••••••"
+                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
+                    />
+                </div>
+            </div>
+
+            <SubmitButton />
+        </form>
+    )
+}
+
+// 🌟 Main Page Wrapper
+export default function SignupPage() {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020817] p-4 relative overflow-hidden transition-colors">
+            
+            {/* 🌌 Background Glowing Effects */}
+            <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px] pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-teal-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+            {/* 🚀 The Card */}
+            <div className="max-w-md w-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-gray-100 dark:border-white/10 p-8 relative z-10">
+                
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-spl-green mb-2">Elimeno</h1>
-                    <p className="text-spl-gray-dark dark:text-gray-400">Join the conversation today</p>
+                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-emerald-500/30 transform rotate-3">
+                        <Sparkles size={32} className="text-white" />
+                    </div>
+                    <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Join Elimeno</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium flex items-center justify-center gap-1.5">
+                        <ShieldCheck size={16} className="text-emerald-500" /> Secure Web3 Orbit
+                    </p>
                 </div>
 
-                <form action={signup} className="space-y-6">
-                    {error && (
-                        <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">
-                            {error}
-                        </div>
-                    )}
+                {/* 🔄 Suspense එක දැම්මේ useSearchParams පාවිච්චි කරන නිසා */}
+                <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>}>
+                    <SignupForm />
+                </Suspense>
 
-                    <div>
-                        <label className="block text-sm font-medium text-spl-black dark:text-gray-200 mb-1">
-                            Display Name
-                        </label>
-                        <input
-                            type="text"
-                            name="displayName"
-                            required
-                            placeholder="e.g. John Doe"
-                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-spl-black dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-spl-blue focus:border-transparent outline-none transition-all"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-spl-black dark:text-gray-200 mb-1">
-                            Email Address
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            required
-                            placeholder="you@example.com"
-                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-spl-black dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-spl-blue focus:border-transparent outline-none transition-all"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-spl-black dark:text-gray-200 mb-1">
-                            Password
-                        </label>
-                        <input
-                            type="password"
-                            name="password"
-                            required
-                            placeholder="••••••••"
-                            className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-spl-black dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-spl-blue focus:border-transparent outline-none transition-all"
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="w-full bg-spl-green hover:bg-spl-green-dark text-white font-medium py-2.5 rounded-lg transition-colors focus:ring-4 focus:ring-green-100"
-                    >
-                        Create Account
-                    </button>
-                </form>
-
-                <div className="mt-6 text-center text-sm text-spl-gray-dark dark:text-gray-400">
-                    Already have an account?{' '}
-                    <Link href="/login" className="text-spl-blue hover:text-spl-blue-dark font-medium transition-colors">
+                <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400 font-medium border-t border-gray-100 dark:border-white/5 pt-6">
+                    Already an explorer?{' '}
+                    <Link href="/login" className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 font-bold transition-colors hover:underline">
                         Log in here
                     </Link>
                 </div>

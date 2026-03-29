@@ -4,6 +4,7 @@ import Feed from '@/components/post/Feed'
 import FollowingList from '@/components/FollowingList' 
 import FollowingChart from '@/components/FollowingChart'
 import { createClient } from '@/utils/supabase/server'
+import ReferralCard from '@/components/ReferralCard'
 
 
 export default async function Home() {
@@ -55,6 +56,8 @@ export default async function Home() {
       {/* ➡️ RIGHT SIDEBAR (දකුණු පැත්තේ කොටස - Desktop විතරයි) */}
       {user && (
         <div className="hidden lg:flex flex-col gap-6 w-80 shrink-0 sticky top-24 h-fit">
+          {/* 🎁 අලුත් Invite & Earn Card එක */}
+                {user && <ReferralCard userId={user.id} />}
           {/* ✅ හරියටම user.id එක පාස් කරනවා */}
           <FollowingList currentUserId={user.id} />
         </div>

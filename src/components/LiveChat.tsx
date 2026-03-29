@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Send, Rocket, Gift, Coins } from 'lucide-react'
+import Link from 'next/link' // 🚀 Link එක අලුතින් Import කරා
 
 export default function LiveChat({ currentUserId }: { currentUserId: string }) {
     const [messages, setMessages] = useState<any[]>([])
@@ -69,25 +70,21 @@ export default function LiveChat({ currentUserId }: { currentUserId: string }) {
         ])
     }
 
-    // 🚀 Tip එකක් යවන ෆන්ක්ෂන් එක (Wallet එකෙන් සල්ලි කැපෙන විදිහට හැදුවා)
     const sendTip = async (amount: number) => {
         if (!currentUserId) return
-        setShowTipMenu(false) // මෙනූ එක වහනවා
+        setShowTipMenu(false) 
 
         try {
-            // 1. මුලින්ම Supabase RPC function එක රන් කරලා සල්ලි කපාගන්නවා
             const { data: success, error } = await supabase.rpc('send_stream_tip', {
                 sender_uuid: currentUserId,
                 tip_amount: amount
             })
 
-            // 2. සල්ලි මදි නම් හරි, වෙන අවුලක් නම් හරි මැසේජ් එක යවන්නේ නෑ!
             if (error || !success) {
                 alert("ඔයාගේ Wallet එකේ ප්‍රමාණවත් LMO බැලන්ස් එකක් නෑ! 🥲 ඩිපොසිට් කරන්න.")
                 return
             }
 
-            // 3. සල්ලි කැපුණා නම් විතරක් චැට් එකට Tip මැසේජ් එක දානවා
             await supabase.from('stream_messages').insert([
                 { 
                     user_id: currentUserId, 
@@ -124,12 +121,16 @@ export default function LiveChat({ currentUserId }: { currentUserId: string }) {
                             {/* 🌟 TIP MESSAGE DESIGN */}
                             {msg.is_tip ? (
                                 <div className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 p-3 rounded-2xl flex items-center gap-3 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
-                                    <div className="bg-yellow-500/20 p-2 rounded-full border border-yellow-500/50">
+                                    <div className="bg-yellow-500/20 p-2 rounded-full border border-yellow-500/50 shrink-0">
                                         <Coins size={24} className="text-yellow-400" />
                                     </div>
                                     <div>
-                                        <p className="font-black text-yellow-400 text-sm">
-                                            {msg.profiles?.display_name || 'Explorer'} tipped {msg.tip_amount} LMO! 🎉
+                                        {/* 🔗 නම උඩ ක්ලික් කරාම Profile එකට යනවා */}
+                                        <p className="font-black text-yellow-400 text-sm flex items-center gap-1 flex-wrap">
+                                            <Link href={`/profile/${msg.user_id}`} className="hover:underline hover:text-yellow-300 transition-colors">
+                                                {msg.profiles?.display_name || 'Explorer'}
+                                            </Link>
+                                            <span>tipped {msg.tip_amount} LMO! 🎉</span>
                                         </p>
                                         <p className="text-yellow-200/70 text-xs font-bold mt-0.5">{msg.text}</p>
                                     </div>
@@ -137,16 +138,22 @@ export default function LiveChat({ currentUserId }: { currentUserId: string }) {
                             ) : (
                                 /* 💬 NORMAL MESSAGE DESIGN */
                                 <div className="flex gap-3 text-sm">
-                                    <img 
-                                        src={msg.profiles?.avatar_url || '/default-avatar.png'} 
-                                        className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0"
-                                        alt="avatar"
-                                    />
+                                    {/* 🔗 ෆොටෝ එක උඩ ක්ලික් කරාම Profile එකට යනවා */}
+                                    <Link href={`/profile/${msg.user_id}`} className="shrink-0">
+                                        <img 
+                                            src={msg.profiles?.avatar_url || '/default-avatar.png'} 
+                                            className="w-8 h-8 rounded-full object-cover border border-white/10 hover:ring-2 hover:ring-emerald-500 transition-all cursor-pointer"
+                                            alt="avatar"
+                                        />
+                                    </Link>
                                     <div>
                                         <div className="flex items-center gap-1.5 mb-1">
-                                            <span className="font-bold text-gray-200">
-                                                {msg.profiles?.display_name || 'Explorer'}
-                                            </span>
+                                            {/* 🔗 නම උඩ ක්ලික් කරාම Profile එකට යනවා */}
+                                            <Link href={`/profile/${msg.user_id}`}>
+                                                <span className="font-bold text-gray-200 hover:text-emerald-400 hover:underline transition-colors cursor-pointer">
+                                                    {msg.profiles?.display_name || 'Explorer'}
+                                                </span>
+                                            </Link>
                                             {msg.profiles?.is_verified && (
                                                 <span className="text-emerald-400 text-[10px]">✔</span>
                                             )}
@@ -183,7 +190,6 @@ export default function LiveChat({ currentUserId }: { currentUserId: string }) {
             <div className="p-4 bg-gray-900/50 border-t border-white/5 relative">
                 <form onSubmit={handleSendMessage} className="flex gap-2">
                     
-                    {/* 🎁 Gift Button */}
                     <button 
                         type="button"
                         onClick={() => setShowTipMenu(!showTipMenu)}
