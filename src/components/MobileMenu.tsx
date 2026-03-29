@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Home, MessageSquare, User, TrendingUp, Trophy, Menu, X } from 'lucide-react'
+import { Home, MessageSquare, User, TrendingUp, Trophy, Menu, X, Radio } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle'
 import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
+import LanguageSwitcher from './LanguageSwitcher'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface MobileMenuProps {
     userId: string
@@ -14,6 +16,7 @@ interface MobileMenuProps {
 }
 
 export default function MobileMenu({ userId, notifications }: MobileMenuProps) {
+    const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
 
     // Close menu when clicking outside
@@ -64,40 +67,52 @@ export default function MobileMenu({ userId, notifications }: MobileMenuProps) {
             {isOpen && (
                 <>
                     {/* Backdrop */}
-                    <div 
-                        className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+                    <div
+                        className="fixed inset-0 bg-black/50 z-[140] sm:hidden"
                         onClick={() => setIsOpen(false)}
                     />
-                    
+
                     {/* Menu Panel */}
-                    <div className="mobile-menu fixed top-14 left-0 right-0 bg-white dark:bg-[#0F172A] border-b border-gray-200 dark:border-gray-800 shadow-xl z-50 sm:hidden animate-slide-down">
-                        <div className="flex flex-col p-4 gap-1 max-h-[calc(100vh-3.5rem)] overflow-y-auto">
-                            
-                            <MobileNavItem href="/" icon={<Home size={20} />} label="Home" onClick={() => setIsOpen(false)} />
-                            <MobileNavItem href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} label="Leaderboard" onClick={() => setIsOpen(false)} />
-                            <MobileNavItem href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} label="Live Market" onClick={() => setIsOpen(false)} />
-                            <MobileNavItem href="/messages" icon={<MessageSquare size={20} />} label="Messages" onClick={() => setIsOpen(false)} />
-                            <MobileNavItem href={`/profile/${userId}`} icon={<User size={20} />} label="Profile" onClick={() => setIsOpen(false)} />
-                            
-                            <div className="h-px bg-gray-200 dark:bg-gray-800 my-2" />
-                            
+                    <div className="mobile-menu fixed top-0 bottom-0 right-0 w-[280px] bg-white dark:bg-[#0F172A] border-l border-gray-200 dark:border-gray-800 shadow-2xl z-[150] sm:hidden animate-slide-left flex flex-col">
+                        <div className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800 mb-2">
+                            <span className="text-xl font-black text-emerald-500 italic">Elimeno</span>
+                            <button onClick={() => setIsOpen(false)} className="p-2 text-gray-400">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 p-4 gap-1 overflow-y-auto no-scrollbar">
+                            <MobileNavItem href="/" icon={<Home size={20} />} label={t('common.home')} onClick={() => setIsOpen(false)} />
+                            <MobileNavItem href="/live" icon={<Radio size={20} className="text-red-500" />} label={t('common.live_orbit')} onClick={() => setIsOpen(false)} />
+                            <MobileNavItem href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} label={t('common.leaderboard')} onClick={() => setIsOpen(false)} />
+                            <MobileNavItem href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} label={t('common.market')} onClick={() => setIsOpen(false)} />
+                            <MobileNavItem href="/messages" icon={<MessageSquare size={20} />} label={t('common.messages')} onClick={() => setIsOpen(false)} />
+                            <MobileNavItem href={`/profile/${userId}`} icon={<User size={20} />} label={t('common.profile')} onClick={() => setIsOpen(false)} />
+
+                            <div className="h-px bg-gray-200 dark:bg-gray-800 my-4" />
+
                             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notifications</span>
+                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('common.notifications')}</span>
                                 <NotificationBell notifications={notifications} />
                             </div>
-                            
+
                             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Settings</span>
+                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Language</span>
+                                <LanguageSwitcher />
+                            </div>
+
+                            <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
+                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('common.settings')}</span>
                                 <SettingsToggle />
                             </div>
-                            
+
                             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</span>
+                                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('common.theme')}</span>
                                 <ThemeToggle />
                             </div>
-                            
-                            <div className="h-px bg-gray-200 dark:bg-gray-800 my-2" />
-                            
+
+                            <div className="h-px bg-gray-200 dark:bg-gray-800 my-4" />
+
                             <div className="p-3">
                                 <SignOutButton />
                             </div>
@@ -105,6 +120,15 @@ export default function MobileMenu({ userId, notifications }: MobileMenuProps) {
                     </div>
                 </>
             )}
+            <style jsx>{`
+                @keyframes slide-left {
+                    from { transform: translateX(100%); }
+                    to { transform: translateX(0); }
+                }
+                .animate-slide-left {
+                    animation: slide-left 0.3s ease-out;
+                }
+            `}</style>
         </>
     )
 }
@@ -118,7 +142,7 @@ function MobileNavItem({ href, icon, label, onClick }: { href: string; icon: Rea
             className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-98"
         >
             <span className="text-gray-600 dark:text-gray-400">{icon}</span>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+            <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{label}</span>
         </Link>
     )
 }

@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
 import { UserPlus, Sparkles, BadgeCheck } from 'lucide-react'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function FollowingList({ currentUserId }: { currentUserId: string }) {
+    const { t } = useTranslation()
     const [users, setUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const supabase = createClient()
@@ -13,11 +15,10 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
     useEffect(() => {
         const fetchUsers = async () => {
             setLoading(true)
-            
-            // 🚀 අලුතින් හදපු is_verified එකත් මෙතනින් select කරනවා
+
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, display_name, avatar_url, is_verified') 
+                .select('id, display_name, avatar_url, is_verified')
                 .limit(10)
 
             if (data) {
@@ -37,7 +38,7 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
 
     if (loading) return (
         <div className="w-full bg-[#1E293B]/40 rounded-[32px] p-8 border border-white/5 text-center animate-pulse">
-            <p className="text-[10px] text-emerald-500 uppercase tracking-[0.3em] font-black">Scanning Space...</p>
+            <p className="text-[10px] text-emerald-500 uppercase tracking-[0.3em] font-black">{t('home.scanning')}</p>
         </div>
     )
 
@@ -45,9 +46,9 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
         <div className="w-full bg-[#1E293B]/40 rounded-[32px] p-6 border border-white/5 shadow-2xl backdrop-blur-md">
             <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-6 px-1 flex items-center gap-2">
                 <Sparkles size={12} className="animate-pulse" />
-                Suggested Explorers
+                {t('home.suggested')}
             </h3>
-            
+
             <div className="flex flex-col gap-5">
                 {users.length > 0 ? (
                     users.map((user) => (
@@ -63,12 +64,10 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
                                     )}
                                 </div>
                                 <div className="truncate pr-2">
-                                    {/* 🚀 නමයි, Space Tick එකයි තියෙන තැන */}
                                     <div className="flex items-center gap-1.5 mb-0.5">
                                         <p className="text-sm font-bold text-gray-200 group-hover:text-emerald-400 transition-colors truncate">
                                             {formatName(user.display_name)}
                                         </p>
-                                        {/* යූසර් Verified නම් විතරක් මේ Tick එක පෙන්වනවා */}
                                         {user.is_verified && (
                                             <BadgeCheck size={14} className="text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
                                         )}
@@ -78,7 +77,7 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
                                     </p>
                                 </div>
                             </Link>
-                            
+
                             <Link href={`/profile/${user.id}`} className="p-2 text-gray-500 hover:text-emerald-400 opacity-0 group-hover:opacity-100 transition-all">
                                 <UserPlus size={18} />
                             </Link>
@@ -86,7 +85,7 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
                     ))
                 ) : (
                     <div className="text-center py-4">
-                        <p className="text-[10px] text-gray-600 italic">No humans detected 🛸</p>
+                        <p className="text-[10px] text-gray-600 italic">{t('home.no_humans')}</p>
                     </div>
                 )}
             </div>

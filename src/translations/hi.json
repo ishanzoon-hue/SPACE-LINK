@@ -1,0 +1,49 @@
+{
+    "common": {
+        "home": "होम",
+        "messages": "संदेश",
+        "notifications": "सूचनाएं",
+        "profile": "प्रोफ़ाइल",
+        "friends": "दोस्त",
+        "settings": "सेटिंग्स",
+        "logout": "लॉग आउट",
+        "search": "खोजें...",
+        "live_orbit": "लाइव ऑर्बिट",
+        "leaderboard": "लीडरबोर्ड",
+        "market": "लाइव मार्केट",
+        "theme": "थीम",
+        "wallet": "वॉलेट",
+        "login": "लॉग इन",
+        "signup": "साइन अप"
+    },
+    "home": {
+        "welcome": "एलिमेन में आपका स्वागत है",
+        "wallet_title": "एलजीएमओ वॉलेट 🚀",
+        "wallet_sub": "अपनी संपत्ति प्रबंधित करें और बोनस प्राप्त करें",
+        "open_wallet": "वॉलेट खोलें",
+        "scanning": "स्कैनिंग...",
+        "suggested": "सुझाए गए खोजकर्ता",
+        "no_humans": "कोई मानव नहीं मिला 🛸",
+        "invite_earn": "आमंत्रित करें और कमाएं"
+    },
+    "post": {
+        "what_on_mind": "आपके मन में क्या है?",
+        "post_btn": "पोस्ट",
+        "comments": "टिप्पणियाँ",
+        "likes": "पसंद",
+        "share": "साझा करें"
+    },
+    "friends": {
+        "title": "दोस्त",
+        "sub": "एलिमेनो पर लोगों से जुड़ें",
+        "tab_friends": "दोस्त",
+        "tab_requests": "अनुरोध",
+        "tab_suggestions": "सुझाव",
+        "add_friend": "दोस्त जोड़ें",
+        "requested": "अनुरोधित",
+        "accept": "स्वीकार करें",
+        "decline": "अस्वीकार करें",
+        "unfriend": "दोस्ती खत्म करें",
+        "view_profile": "प्रोफ़ाइल देखें"
+    }
+}

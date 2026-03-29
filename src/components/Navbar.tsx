@@ -1,45 +1,60 @@
+'use client'
+
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/utils/supabase/client'
 import SearchBar from './SearchBar'
 import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle'
-import { Home, MessageSquare, User, TrendingUp, Trophy, Radio, Coins, Users } from 'lucide-react' // 🪙 Coins, 👥 Users
+import { Home, MessageSquare, User, TrendingUp, Trophy, Radio, Coins, Users } from 'lucide-react'
 import MobileMenu from './MobileMenu'
+import LanguageSwitcher from './LanguageSwitcher'
+import { useTranslation } from '@/hooks/useTranslation'
+import { useEffect, useState } from 'react'
 
-export default async function Navbar() {
-    const supabase = await createClient()
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+export default function Navbar() {
+    const { t } = useTranslation()
+    const [user, setUser] = useState<any>(null)
+    const [notifications, setNotifications] = useState<any[]>([])
+    const [lmoBalance, setLmoBalance] = useState(0)
+    const supabase = createClient()
 
-    let notifications = []
-    let lmoBalance = 0 // 💸 බැලන්ස් එක සේව් කරගන්න Variable එක
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user: authUser } } = await supabase.auth.getUser()
+            setUser(authUser)
 
-    if (user) {
-        // 1. Notifications ගන්නවා
-        const { data: notifData, error: notifError } = await supabase
-            .from('notifications')
-            .select(`*, from_user:profiles!sender_id(display_name, avatar_url), post:posts!post_id(content)`)
-            .eq('receiver_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(10)
+            if (authUser) {
+                // 1. Notifications
+                const { data: notifData } = await supabase
+                    .from('notifications')
+                    .select(`*, from_user:profiles!sender_id(display_name, avatar_url), post:posts!post_id(content)`)
+                    .eq('receiver_id', authUser.id)
+                    .order('created_at', { ascending: false })
+                    .limit(10)
+                if (notifData) setNotifications(notifData)
 
-        if (!notifError) notifications = notifData || []
+                // 2. LMO Balance
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('lmo_balance')
+                    .eq('id', authUser.id)
+                    .single()
+                if (profileData) setLmoBalance(profileData.lmo_balance || 0)
+            }
+        }
+        getUser()
 
-        // 2. 💸 User ගේ LMO Balance එක Database එකෙන් ගන්නවා
-        const { data: profileData } = await supabase
-            .from('profiles')
-            .select('lmo_balance')
-            .eq('id', user.id)
-            .single()
+        // Auth Listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null)
+        })
 
-        lmoBalance = profileData?.lmo_balance || 0
-    }
+        return () => subscription.unsubscribe()
+    }, [])
 
     const iconBtnStyle = "p-2 sm:p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-gray-800 hover:text-emerald-500 transition-all flex items-center justify-center shrink-0 cursor-pointer min-h-[44px] min-w-[44px]"
-
     const tooltipStyle = "absolute top-full mt-1.5 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap shadow-xl pointer-events-none z-[120] hidden sm:block"
 
     return (
@@ -63,7 +78,7 @@ export default async function Navbar() {
                     <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                         {user ? (
                             <>
-                                {/* 💸 LMO Balance Badge (Mobile & Desktop) */}
+                                {/* 💸 LMO Balance Badge */}
                                 <div className="flex items-center gap-1.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 px-3 py-1.5 rounded-full transition-all mr-1 sm:mr-3 cursor-default shadow-[0_0_10px_rgba(234,179,8,0.1)]">
                                     <Coins size={16} className="text-yellow-500" />
                                     <span className="text-yellow-500 font-black text-sm sm:text-base">{lmoBalance}</span>
@@ -71,7 +86,7 @@ export default async function Navbar() {
 
                                 {/* Desktop Icons */}
                                 <div className="hidden sm:flex items-center gap-0.5 sm:gap-1">
-                                    <NavIcon href="/" icon={<Home size={20} />} tooltip="Home" />
+                                    <NavIcon href="/" icon={<Home size={20} />} tooltip={t('common.home')} />
 
                                     <div className="relative group">
                                         <Link href="/live" className={`${iconBtnStyle} hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500`}>
@@ -79,54 +94,53 @@ export default async function Navbar() {
                                             <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                                             <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping opacity-75"></span>
                                         </Link>
-                                        <span className={tooltipStyle}>Live Orbit</span>
+                                        <span className={tooltipStyle}>{t('common.live_orbit')}</span>
                                     </div>
 
-                                    <NavIcon href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} tooltip="Leaderboard" />
-                                    <NavIcon href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} tooltip="Live Market" />
-                                    <NavIcon href="/friends" icon={<Users size={20} className="text-blue-400" />} tooltip="Friends" />
-                                    <NavIcon href="/messages" icon={<MessageSquare size={20} />} tooltip="Messages" />
-                                    <NavIcon href={`/profile/${user.id}`} icon={<User size={20} />} tooltip="Profile" />
+                                    <NavIcon href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} tooltip={t('common.leaderboard')} />
+                                    <NavIcon href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} tooltip={t('common.market')} />
+                                    <NavIcon href="/friends" icon={<Users size={20} className="text-blue-400" />} tooltip={t('common.friends')} />
+                                    <NavIcon href="/messages" icon={<MessageSquare size={20} />} tooltip={t('common.messages')} />
+                                    <NavIcon href={`/profile/${user.id}`} icon={<User size={20} />} tooltip={t('common.profile')} />
 
                                     <div className="relative group">
                                         <NotificationBell notifications={notifications} />
-                                        <span className={tooltipStyle}>Notifications</span>
+                                        <span className={tooltipStyle}>{t('common.notifications')}</span>
                                     </div>
 
                                     <div className="relative group">
                                         <SettingsToggle />
-                                        <span className={tooltipStyle}>Settings</span>
+                                        <span className={tooltipStyle}>{t('common.settings')}</span>
+                                    </div>
+
+                                    <div className="relative group">
+                                        <LanguageSwitcher />
+                                        <span className={tooltipStyle}>Language</span>
                                     </div>
 
                                     <div className="relative group">
                                         <ThemeToggle />
-                                        <span className={tooltipStyle}>Theme</span>
+                                        <span className={tooltipStyle}>{t('common.theme')}</span>
                                     </div>
 
                                     <div className="relative group ml-1 pl-1 border-l border-gray-200 dark:border-gray-800">
                                         <SignOutButton />
-                                        <span className={tooltipStyle}>Log Out</span>
+                                        <span className={tooltipStyle}>{t('common.logout')}</span>
                                     </div>
                                 </div>
-
-                                {/* Mobile LIVE Stream Button */}
-                                <Link href="/live" className="sm:hidden relative p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-all flex items-center justify-center mr-1">
-                                    <Radio size={22} className="animate-pulse" />
-                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-ping opacity-75"></span>
-                                </Link>
 
                                 {/* Mobile Menu Button */}
                                 <MobileMenu userId={user.id} notifications={notifications} />
                             </>
                         ) : (
                             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                                <LanguageSwitcher />
                                 <ThemeToggle />
                                 <Link href="/login" className="text-sm font-bold text-gray-600 hover:text-emerald-500 dark:text-gray-300 transition-colors px-2 sm:px-0">
-                                    Log in
+                                    {t('common.login')}
                                 </Link>
                                 <Link href="/signup" className="text-sm font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-3 sm:px-4 py-2 rounded-xl transition-all shadow-md shadow-emerald-500/20">
-                                    Sign up
+                                    {t('common.signup')}
                                 </Link>
                             </div>
                         )}

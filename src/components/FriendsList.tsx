@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { createClient } from '@/utils/supabase/client'
 import { Users, UserCheck, UserPlus, UserX, Clock, BadgeCheck, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useTranslation } from '@/hooks/useTranslation'
 
 type Profile = {
     id: string
@@ -23,6 +24,7 @@ type Props = {
 }
 
 export default function FriendsList({ friends: initialFriends, pendingRequests: initialRequests, suggestions: initialSuggestions, currentUserId }: Props) {
+    const { t } = useTranslation()
     const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'suggestions'>('friends')
     const [friends, setFriends] = useState<Profile[]>(initialFriends)
     const [pendingRequests, setPendingRequests] = useState<Profile[]>(initialRequests)
@@ -119,17 +121,17 @@ export default function FriendsList({ friends: initialFriends, pendingRequests: 
     }
 
     const tabs = [
-        { key: 'friends', label: 'Friends', icon: <Users size={18} />, count: friends.length },
-        { key: 'requests', label: 'Requests', icon: <Clock size={18} />, count: pendingRequests.length },
-        { key: 'suggestions', label: 'People You May Know', icon: <UserPlus size={18} />, count: suggestions.length },
+        { key: 'friends', label: t('friends.tab_friends'), icon: <Users size={18} />, count: friends.length },
+        { key: 'requests', label: t('friends.tab_requests'), icon: <Clock size={18} />, count: pendingRequests.length },
+        { key: 'suggestions', label: t('friends.tab_suggestions'), icon: <UserPlus size={18} />, count: suggestions.length },
     ] as const
 
     return (
         <div className="max-w-5xl mx-auto">
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-1">Friends</h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Connect with people on Elimeno</p>
+                <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-1">{t('friends.title')}</h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{t('friends.sub')}</p>
             </div>
 
             {/* Tabs */}
@@ -139,8 +141,8 @@ export default function FriendsList({ friends: initialFriends, pendingRequests: 
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all flex-1 justify-center ${activeTab === tab.key
-                                ? 'bg-white dark:bg-[#1E293B] text-emerald-500 shadow-sm border border-gray-200 dark:border-gray-700'
-                                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                            ? 'bg-white dark:bg-[#1E293B] text-emerald-500 shadow-sm border border-gray-200 dark:border-gray-700'
+                            : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                             }`}
                     >
                         {tab.icon}
@@ -163,7 +165,7 @@ export default function FriendsList({ friends: initialFriends, pendingRequests: 
                             type="text"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            placeholder="Search friends..."
+                            placeholder={t('common.search')}
                             className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#0F172A] border border-gray-200 dark:border-gray-800 rounded-2xl text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all"
                         />
                     </div>
@@ -190,14 +192,14 @@ export default function FriendsList({ friends: initialFriends, pendingRequests: 
                                                 href={`/profile/${user.id}`}
                                                 className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-center py-2 rounded-xl font-bold text-xs transition-all"
                                             >
-                                                View Profile
+                                                {t('friends.view_profile')}
                                             </Link>
                                             <button
                                                 onClick={() => handleDecline(user, 'friends')}
                                                 disabled={loadingId === user.id}
                                                 className="flex-1 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 text-red-500 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1"
                                             >
-                                                <UserX size={13} /> Unfriend
+                                                <UserX size={13} /> {t('friends.unfriend')}
                                             </button>
                                         </div>
                                     }
@@ -235,14 +237,14 @@ export default function FriendsList({ friends: initialFriends, pendingRequests: 
                                                 disabled={loadingId === user.id}
                                                 className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1 disabled:opacity-60"
                                             >
-                                                <UserCheck size={13} /> {loadingId === user.id ? '...' : 'Accept'}
+                                                <UserCheck size={13} /> {loadingId === user.id ? '...' : t('friends.accept')}
                                             </button>
                                             <button
                                                 onClick={() => handleDecline(user, 'requests')}
                                                 disabled={loadingId === user.id}
                                                 className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1"
                                             >
-                                                <UserX size={13} /> Decline
+                                                <UserX size={13} /> {t('friends.decline')}
                                             </button>
                                         </div>
                                     }
@@ -279,13 +281,13 @@ export default function FriendsList({ friends: initialFriends, pendingRequests: 
                                                 disabled={loadingId === user.id}
                                                 className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1 disabled:opacity-60 shadow-md shadow-emerald-500/20"
                                             >
-                                                <UserPlus size={13} /> {loadingId === user.id ? '...' : 'Add Friend'}
+                                                <UserPlus size={13} /> {loadingId === user.id ? '...' : t('friends.add_friend')}
                                             </button>
                                             <Link
                                                 href={`/profile/${user.id}`}
                                                 className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-center py-2 rounded-xl font-bold text-xs transition-all flex items-center justify-center"
                                             >
-                                                View Profile
+                                                {t('friends.view_profile')}
                                             </Link>
                                         </div>
                                     }

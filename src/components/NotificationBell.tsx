@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import { Heart, MessageCircle, UserPlus, UserCheck, Bell, CheckCheck, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface Notification {
     id: string
@@ -23,6 +24,7 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ notifications: initialNotifications }: NotificationBellProps) {
+    const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState(initialNotifications)
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -75,13 +77,13 @@ export default function NotificationBell({ notifications: initialNotifications }
 
     const getNotificationText = (notification: Notification) => {
         switch (notification.type) {
-            case 'like': return `liked your post`
-            case 'comment': return `commented on your post`
-            case 'follow': return `started following you`
-            case 'accept_request': return `accepted your friend request`
-            case 'mention': return `mentioned you in a post`
-            case 'message': return `sent you a message`
-            default: return `interacted with you`
+            case 'like': return t('notifications.liked')
+            case 'comment': return t('notifications.commented')
+            case 'follow': return t('notifications.followed')
+            case 'accept_request': return t('notifications.accepted')
+            case 'mention': return t('notifications.mentioned')
+            case 'message': return t('notifications.messaged')
+            default: return t('notifications.interacted')
         }
     }
 
@@ -113,7 +115,7 @@ export default function NotificationBell({ notifications: initialNotifications }
             {isOpen && (
                 <div className="absolute right-[-60px] sm:right-0 mt-2 w-[340px] sm:w-[350px] bg-white dark:bg-[#1E293B] border border-gray-100 dark:border-gray-800 rounded-2xl shadow-xl z-[150] overflow-hidden">
                     <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h3>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('notifications.title')}</h3>
                         <div className="flex gap-2">
                             {unreadCount > 0 && (
                                 <button
@@ -127,11 +129,11 @@ export default function NotificationBell({ notifications: initialNotifications }
                         </div>
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto">
+                    <div className="max-h-[400px] overflow-y-auto no-scrollbar">
                         {notifications.length === 0 ? (
                             <div className="p-8 text-center">
                                 <Bell size={32} className="mx-auto text-gray-300 dark:text-gray-600 mb-2 opacity-50" />
-                                <p className="text-sm font-medium text-gray-500">No notifications yet</p>
+                                <p className="text-sm font-medium text-gray-500">{t('notifications.none')}</p>
                             </div>
                         ) : (
                             <div className="flex flex-col">
@@ -194,7 +196,7 @@ export default function NotificationBell({ notifications: initialNotifications }
                             onClick={() => setIsOpen(false)}
                             className="block w-full text-center py-2 text-sm font-semibold text-emerald-500 dark:text-emerald-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         >
-                            See all in Notifications
+                            {t('notifications.see_all')}
                         </Link>
                     </div>
                 </div>

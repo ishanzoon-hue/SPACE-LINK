@@ -1,0 +1,61 @@
+{
+    "common": {
+        "home": "Home",
+        "messages": "Messages",
+        "notifications": "Notifications",
+        "profile": "Profile",
+        "friends": "Friends",
+        "settings": "Settings",
+        "logout": "Log Out",
+        "search": "Search...",
+        "live_orbit": "Live Orbit",
+        "leaderboard": "Leaderboard",
+        "market": "Live Market",
+        "theme": "Theme",
+        "wallet": "Wallet",
+        "login": "Log in",
+        "signup": "Sign up"
+    },
+    "home": {
+        "welcome": "Welcome to Elimen",
+        "wallet_title": "ELIMEN LMO WALLET 🚀",
+        "wallet_sub": "Manage your assets & Claim bonus",
+        "open_wallet": "OPEN WALLET",
+        "scanning": "Scanning Space...",
+        "suggested": "Suggested Explorers",
+        "no_humans": "No humans detected 🛸",
+        "invite_earn": "Invite & Earn"
+    },
+    "post": {
+        "what_on_mind": "What's on your mind?",
+        "post_btn": "Post",
+        "comments": "Comments",
+        "likes": "Likes",
+        "share": "Share"
+    },
+    "friends": {
+        "title": "Friends",
+        "sub": "Connect with people on Elimeno",
+        "tab_friends": "Friends",
+        "tab_requests": "Requests",
+        "tab_suggestions": "Suggestions",
+        "add_friend": "Add Friend",
+        "requested": "Requested",
+        "accept": "Accept",
+        "decline": "Decline",
+        "unfriend": "Unfriend",
+        "view_profile": "View Profile"
+    },
+    "notifications": {
+        "title": "Notifications",
+        "none": "No notifications yet",
+        "see_all": "See all in Notifications",
+        "liked": "liked your post",
+        "commented": "commented on your post",
+        "followed": "started following you",
+        "accepted": "accepted your friend request",
+        "mentioned": "mentioned you in a post",
+        "messaged": "sent you a message",
+        "interacted": "interacted with you"
+    }
+}
