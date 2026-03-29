@@ -37,12 +37,24 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
 
     const isOwnProfile = currentUser?.id === id
 
-    // 📸 ෆොටෝ තියෙන පෝස්ට් විතරක් පෙරා ගන්නවා
+    // 👥 Friends (accepted friend_requests)
+    const { data: friendRequests } = await supabase
+        .from('friend_requests')
+        .select('id, sender_id, receiver_id')
+        .eq('status', 'accepted')
+        .or(`sender_id.eq.${id},receiver_id.eq.${id}`)
+
+    const friendIds = (friendRequests || []).map(r => r.sender_id === id ? r.receiver_id : r.sender_id)
+    const { data: friendProfiles } = friendIds.length > 0
+        ? await supabase.from('profiles').select('id, display_name, avatar_url, is_verified').in('id', friendIds)
+        : { data: [] }
+
+    // 📸 ආළී පෝස්ට් තියේන පෝස්ට් විතරක් පෙරා ගන්නවා
     const photoPosts = posts?.filter(post => post.image_url) || []
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#020817] text-gray-900 dark:text-white pb-10 transition-colors">
-            
+
             {/* 📸 COVER PHOTO */}
             <div className="relative h-64 md:h-96 w-full max-w-7xl mx-auto md:rounded-b-3xl overflow-hidden shadow-lg group" style={{ background: `linear-gradient(135deg, ${vibeColor}88, #000000)` }}>
                 {profile.cover_url ? (
@@ -50,21 +62,21 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                 ) : (
                     <div className="w-full h-full bg-gradient-to-r from-gray-800 to-gray-900 opacity-50"></div>
                 )}
-                
+
                 <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
 
                 {isOwnProfile && (
                     <div className="absolute top-6 right-6 z-20">
-                         <EditProfileModal profile={profile} /> 
+                        <EditProfileModal profile={profile} />
                     </div>
                 )}
             </div>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                
+
                 {/* 👤 PROFILE HEADER */}
                 <div className="relative flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20 md:-mt-24 mb-6 z-10">
-                    
+
                     {/* Avatar */}
                     <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full border-[6px] border-white dark:border-[#0F172A] shadow-2xl overflow-hidden shrink-0 bg-gray-100 dark:bg-gray-800 transition-transform hover:scale-105 duration-300">
                         {profile.avatar_url ? (
@@ -81,15 +93,15 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                         {/* 🚀 නම සහ Verified Badge එක */}
                         <h1 className="text-4xl md:text-5xl font-extrabold mb-1 tracking-tight text-gray-900 dark:text-white flex items-center justify-center md:justify-start gap-3">
                             {profile.display_name}
-                            
+
                             {/* යූසර් Verified නම් විතරක් මේ ලොකු Tick එක පෙන්වනවා */}
                             {profile.is_verified && (
-                                <BadgeCheck 
-                                    size={36} 
-                                    className="text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_12px_rgba(52,211,153,0.6)] mt-1" 
+                                <BadgeCheck
+                                    size={36}
+                                    className="text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_12px_rgba(52,211,153,0.6)] mt-1"
                                 />
                             )}
-                            
+
                             {/* පොඩි Sparkle එකත් අයින් කරේ නෑ, ඒකත් ලස්සනයි */}
                             {!profile.is_verified && <Sparkles className="w-6 h-6" style={{ color: vibeColor }} />}
                         </h1>
@@ -131,7 +143,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     </div>
                 </div>
 
-                {/* 📑 TABS MENU */}
+                {/* 📋 TABS MENU */}
                 <div className="flex overflow-x-auto no-scrollbar gap-2 mb-8 border-b border-gray-200 dark:border-gray-800 pb-px">
                     <a href={`/profile/${id}?tab=posts`} className={`px-6 py-4 font-bold text-sm md:text-base whitespace-nowrap border-b-4 transition-colors flex items-center gap-2 ${activeTab === 'posts' ? '' : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'}`} style={activeTab === 'posts' ? { borderBottomColor: vibeColor, color: vibeColor } : {}}>
                         <FileText size={18} /> Posts
@@ -141,6 +153,9 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     </a>
                     <a href={`/profile/${id}?tab=photos`} className={`px-6 py-4 font-bold text-sm md:text-base whitespace-nowrap border-b-4 transition-colors flex items-center gap-2 ${activeTab === 'photos' ? '' : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'}`} style={activeTab === 'photos' ? { borderBottomColor: vibeColor, color: vibeColor } : {}}>
                         <ImageIcon size={18} /> Photos
+                    </a>
+                    <a href={`/profile/${id}?tab=friends`} className={`px-6 py-4 font-bold text-sm md:text-base whitespace-nowrap border-b-4 transition-colors flex items-center gap-2 ${activeTab === 'friends' ? '' : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'}`} style={activeTab === 'friends' ? { borderBottomColor: vibeColor, color: vibeColor } : {}}>
+                        <Users size={18} /> Friends <span className="text-xs font-black bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">{friendIds.length}</span>
                     </a>
                 </div>
 
@@ -207,19 +222,19 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                                 </div>
                             )}
                             {profile.location && (
-                                <div className="flex items-start gap-4"><MapPin style={{color: vibeColor}} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Current City</p><p className="font-bold">{profile.location}</p></div></div>
+                                <div className="flex items-start gap-4"><MapPin style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Current City</p><p className="font-bold">{profile.location}</p></div></div>
                             )}
                             {profile.work && (
-                                <div className="flex items-start gap-4"><Briefcase style={{color: vibeColor}} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Work</p><p className="font-bold">{profile.work}</p></div></div>
+                                <div className="flex items-start gap-4"><Briefcase style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Work</p><p className="font-bold">{profile.work}</p></div></div>
                             )}
                             {profile.education && (
-                                <div className="flex items-start gap-4"><GraduationCap style={{color: vibeColor}} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Education</p><p className="font-bold">{profile.education}</p></div></div>
+                                <div className="flex items-start gap-4"><GraduationCap style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Education</p><p className="font-bold">{profile.education}</p></div></div>
                             )}
                             {profile.birthday && (
-                                <div className="flex items-start gap-4"><Cake style={{color: vibeColor}} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Birthday</p><p className="font-bold">{new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div></div>
+                                <div className="flex items-start gap-4"><Cake style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Birthday</p><p className="font-bold">{new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div></div>
                             )}
                             {profile.website && (
-                                <div className="flex items-start gap-4"><LinkIcon style={{color: vibeColor}} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Website</p><a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-blue-500 truncate block max-w-[200px]">{profile.website.replace(/^https?:\/\//, '')}</a></div></div>
+                                <div className="flex items-start gap-4"><LinkIcon style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Website</p><a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-blue-500 truncate block max-w-[200px]">{profile.website.replace(/^https?:\/\//, '')}</a></div></div>
                             )}
                         </div>
                     </div>
@@ -232,7 +247,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                             <h2 className="text-2xl font-black">Photos</h2>
                             <p className="text-gray-500">{photoPosts.length} Photos</p>
                         </div>
-                        
+
                         {photoPosts.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {photoPosts.map((post) => (
@@ -251,6 +266,43 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                                 <ImageIcon className="mx-auto text-gray-400 mb-4" size={48} />
                                 <h3 className="text-xl font-bold mb-2">No Photos Yet</h3>
                                 <p className="text-gray-500">Photos from your posts will automatically appear here.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 📄 TAB 4: FRIENDS */}
+                {activeTab === 'friends' && (
+                    <div className="animate-in fade-in duration-500">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-black">Friends</h2>
+                            <p className="text-gray-500">{friendIds.length} Friends</p>
+                        </div>
+                        {(friendProfiles && friendProfiles.length > 0) ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                {friendProfiles.map(friend => (
+                                    <Link key={friend.id} href={`/profile/${friend.id}`} className="bg-white dark:bg-[#0F172A] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden hover:shadow-md transition-all group flex flex-col">
+                                        <div className="h-12 bg-gradient-to-br from-emerald-500/30 via-blue-500/20 to-purple-500/20" />
+                                        <div className="p-3 -mt-7 flex flex-col items-center text-center">
+                                            <div className="w-14 h-14 rounded-full border-4 border-white dark:border-[#0F172A] overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-sm mb-2">
+                                                {friend.avatar_url ? (
+                                                    <img src={friend.avatar_url} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span className="text-lg font-black text-emerald-500">{(friend.display_name || 'U').charAt(0).toUpperCase()}</span>
+                                                )}
+                                            </div>
+                                            <p className="font-bold text-xs text-gray-900 dark:text-white truncate w-full group-hover:text-emerald-500 transition-colors">
+                                                {friend.display_name?.includes('@') ? friend.display_name.split('@')[0] : friend.display_name}
+                                            </p>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-20 bg-white dark:bg-[#0F172A] rounded-3xl border border-dashed border-gray-300 dark:border-gray-700">
+                                <Users className="mx-auto text-gray-400 mb-4" size={48} />
+                                <h3 className="text-xl font-bold mb-2">No Friends Yet</h3>
+                                <p className="text-gray-500">Friends will appear here after connecting.</p>
                             </div>
                         )}
                     </div>
