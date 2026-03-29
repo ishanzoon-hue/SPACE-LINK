@@ -48,21 +48,47 @@ export default function IncomingCallListener() {
 
                     if (profile) setCallerProfile(profile)
 
-                    // Play ringing sound (use Web Audio API beep as fallback)
+                    // Play realistic phone ringtone using Web Audio API
                     try {
                         const audioCtx = new AudioContext()
-                        const playBeep = () => {
-                            const osc = audioCtx.createOscillator()
-                            const gain = audioCtx.createGain()
-                            osc.connect(gain)
-                            gain.connect(audioCtx.destination)
-                            osc.frequency.value = 440
-                            gain.gain.value = 0.3
-                            osc.start()
-                            setTimeout(() => osc.stop(), 300)
+
+                        // Realistic phone ring: dual-tone (440Hz + 480Hz), rings for 1s, pauses 2s
+                        const playRing = () => {
+                            // First tone
+                            const osc1 = audioCtx.createOscillator()
+                            const osc2 = audioCtx.createOscillator()
+                            const gainNode = audioCtx.createGain()
+
+                            osc1.connect(gainNode)
+                            osc2.connect(gainNode)
+                            gainNode.connect(audioCtx.destination)
+
+                            // US phone ring tones
+                            osc1.frequency.value = 440
+                            osc2.frequency.value = 480
+                            osc1.type = 'sine'
+                            osc2.type = 'sine'
+
+                            // Volume envelope: fade in, sustain, fade out
+                            const now = audioCtx.currentTime
+                            gainNode.gain.setValueAtTime(0, now)
+                            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.05)
+                            gainNode.gain.setValueAtTime(0.15, now + 0.4)
+                            gainNode.gain.linearRampToValueAtTime(0, now + 0.45)
+                            // Second burst
+                            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.6)
+                            gainNode.gain.setValueAtTime(0.15, now + 1.0)
+                            gainNode.gain.linearRampToValueAtTime(0, now + 1.05)
+
+                            osc1.start(now)
+                            osc2.start(now)
+                            osc1.stop(now + 1.1)
+                            osc2.stop(now + 1.1)
                         }
-                        playBeep()
-                        const interval = setInterval(playBeep, 1500)
+
+                        playRing()
+                        // Ring pattern: ring 1s, silence 2s = 3s cycle
+                        const interval = setInterval(playRing, 3000)
 
                         // Auto-dismiss after 30 seconds
                         setTimeout(() => {
