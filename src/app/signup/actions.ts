@@ -1,9 +1,10 @@
+'use server'
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
 export async function signup(formData: FormData) {
-    'use server'
 
     const email = formData.get('email') as string
     const password = formData.get('password') as string
@@ -35,7 +36,7 @@ export async function signup(formData: FormData) {
 
     // 2. 🎁 Referral එකක් තියෙනවා නම් දෙන්නටම 50 LMO දෙනවා!
     if (refCode && data.user) {
-        
+
         // අලුත් යූසර්ට 50 LMO දෙනවා (Trigger එකෙන් Profile එක හැදුනට පස්සේ බැලන්ස් එක අප්ඩේට් කරනවා)
         await supabase
             .from('profiles')
