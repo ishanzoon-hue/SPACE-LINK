@@ -5,7 +5,7 @@ import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle' 
-import { Home, MessageSquare, User, TrendingUp, Trophy } from 'lucide-react'
+import { Home, MessageSquare, User, TrendingUp, Trophy, Radio } from 'lucide-react' // ✅ Radio අයිකන් එක එකතු කළා
 import MobileMenu from './MobileMenu'
 
 export default async function Navbar() {
@@ -64,6 +64,18 @@ export default async function Navbar() {
                                 {/* Desktop Icons */}
                                 <div className="hidden sm:flex items-center gap-0.5 sm:gap-1">
                                     <NavIcon href="/" icon={<Home size={20} />} tooltip="Home" />
+                                    
+                                    {/* 🔴 අලුත් LIVE Stream Button එක */}
+                                    <div className="relative group">
+                                        <Link href="/live" className={`${iconBtnStyle} hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500`}>
+                                            <Radio size={20} className="animate-pulse" />
+                                            {/* දිලිසෙන රතු පාට Dot එක */}
+                                            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                                            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping opacity-75"></span>
+                                        </Link>
+                                        <span className={tooltipStyle}>Live Orbit</span>
+                                    </div>
+
                                     <NavIcon href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} tooltip="Leaderboard" />
                                     <NavIcon href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} tooltip="Live Market" />
                                     <NavIcon href="/messages" icon={<MessageSquare size={20} />} tooltip="Messages" />

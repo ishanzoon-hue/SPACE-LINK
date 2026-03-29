@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/client'
-import { UserPlus, Sparkles } from 'lucide-react'
+import { UserPlus, Sparkles, BadgeCheck } from 'lucide-react'
 
 export default function FollowingList({ currentUserId }: { currentUserId: string }) {
     const [users, setUsers] = useState<any[]>([])
@@ -14,18 +14,13 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
         const fetchUsers = async () => {
             setLoading(true)
             
-            // 🚀 සරලම Query එක: profiles ටේබල් එකේ ඉන්න ඕනෑම 10 දෙනෙක්ව ගන්නවා
+            // 🚀 අලුතින් හදපු is_verified එකත් මෙතනින් select කරනවා
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, display_name, avatar_url') 
+                .select('id, display_name, avatar_url, is_verified') 
                 .limit(10)
 
-            if (error) {
-                console.error("Supabase Error:", error.message)
-            }
-
             if (data) {
-                // තමන්ගේම නම අයින් කරලා අනිත් අයව පෙන්වනවා
                 const others = data.filter(u => u.id !== currentUserId)
                 setUsers(others)
             }
@@ -50,7 +45,7 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
         <div className="w-full bg-[#1E293B]/40 rounded-[32px] p-6 border border-white/5 shadow-2xl backdrop-blur-md">
             <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-6 px-1 flex items-center gap-2">
                 <Sparkles size={12} className="animate-pulse" />
-                Suggested Friends
+                Suggested Explorers
             </h3>
             
             <div className="flex flex-col gap-5">
@@ -68,10 +63,17 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
                                     )}
                                 </div>
                                 <div className="truncate pr-2">
-                                    <p className="text-sm font-bold text-gray-200 group-hover:text-emerald-400 transition-colors truncate">
-                                        {formatName(user.display_name)}
-                                    </p>
-                                    <p className="text-[10px] text-gray-500 font-medium">
+                                    {/* 🚀 නමයි, Space Tick එකයි තියෙන තැන */}
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                        <p className="text-sm font-bold text-gray-200 group-hover:text-emerald-400 transition-colors truncate">
+                                            {formatName(user.display_name)}
+                                        </p>
+                                        {/* යූසර් Verified නම් විතරක් මේ Tick එක පෙන්වනවා */}
+                                        {user.is_verified && (
+                                            <BadgeCheck size={14} className="text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 font-medium leading-none">
                                         @{formatName(user.display_name).toLowerCase()}
                                     </p>
                                 </div>
@@ -85,7 +87,6 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
                 ) : (
                     <div className="text-center py-4">
                         <p className="text-[10px] text-gray-600 italic">No humans detected 🛸</p>
-                        <p className="text-[8px] text-gray-700 mt-2 uppercase">Check Profiles Table in Supabase</p>
                     </div>
                 )}
             </div>

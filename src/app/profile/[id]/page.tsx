@@ -6,23 +6,21 @@ import FriendButton from '@/components/post/FriendButton'
 import EditProfileModal from './EditProfileModal'
 import OnlineFollowers from '@/components/post/OnlineFollowers'
 import AdSection from '@/components/AdSection'
-// ✅ Heart අයිකන් එක මෙතනට අලුතින් එකතු කළා!
-import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart } from 'lucide-react'
+import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck } from 'lucide-react'
 import Link from 'next/link'
 
-// ✅ Next.js 15+ වල searchParams ගන්න විදිහ
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
     const { id } = await params
     const resolvedSearchParams = await searchParams
-    const activeTab = resolvedSearchParams.tab || 'posts' // දැනට ඉන්න Tab එක මොකක්ද කියලා බලනවා
+    const activeTab = resolvedSearchParams.tab || 'posts'
 
     const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
 
-    // 1. ප්‍රොෆයිල් දත්ත ලබා ගැනීම
+    // 🚀 1. ප්‍රොෆයිල් දත්ත ලබා ගැනීම (is_verified එකතු කළා)
     const { data: profile, error } = await supabase
         .from('profiles')
-        .select(`*, followers:follows!followed_id(count), following:follows!follower_id(count)`)
+        .select(`*, followers:follows!followed_id(count), following:follows!follower_id(count), is_verified`)
         .eq('id', id)
         .single()
 
@@ -39,13 +37,13 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
 
     const isOwnProfile = currentUser?.id === id
 
-    // 📸 ෆොටෝ තියෙන පෝස්ට් විතරක් පෙරා ගන්නවා (Photos Tab එකට)
+    // 📸 ෆොටෝ තියෙන පෝස්ට් විතරක් පෙරා ගන්නවා
     const photoPosts = posts?.filter(post => post.image_url) || []
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#020817] text-gray-900 dark:text-white pb-10 transition-colors">
             
-            {/* 📸 COVER PHOTO - Facebook Style */}
+            {/* 📸 COVER PHOTO */}
             <div className="relative h-64 md:h-96 w-full max-w-7xl mx-auto md:rounded-b-3xl overflow-hidden shadow-lg group" style={{ background: `linear-gradient(135deg, ${vibeColor}88, #000000)` }}>
                 {profile.cover_url ? (
                     <img src={profile.cover_url} alt="Cover" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
@@ -53,7 +51,6 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     <div className="w-full h-full bg-gradient-to-r from-gray-800 to-gray-900 opacity-50"></div>
                 )}
                 
-                {/* 🌟 Glowing Edge Effect */}
                 <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
 
                 {isOwnProfile && (
@@ -65,7 +62,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 
-                {/* 👤 PROFILE HEADER - Clean & Modern */}
+                {/* 👤 PROFILE HEADER */}
                 <div className="relative flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20 md:-mt-24 mb-6 z-10">
                     
                     {/* Avatar */}
@@ -81,11 +78,22 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
 
                     {/* Name & Title */}
                     <div className="flex-1 text-center md:text-left pb-4 md:pb-6">
-                        <h1 className="text-4xl md:text-5xl font-extrabold mb-1 tracking-tight text-gray-900 dark:text-white flex items-center justify-center md:justify-start gap-2">
+                        {/* 🚀 නම සහ Verified Badge එක */}
+                        <h1 className="text-4xl md:text-5xl font-extrabold mb-1 tracking-tight text-gray-900 dark:text-white flex items-center justify-center md:justify-start gap-3">
                             {profile.display_name}
-                            <Sparkles className="w-6 h-6" style={{ color: vibeColor }} />
+                            
+                            {/* යූසර් Verified නම් විතරක් මේ ලොකු Tick එක පෙන්වනවා */}
+                            {profile.is_verified && (
+                                <BadgeCheck 
+                                    size={36} 
+                                    className="text-emerald-400 fill-emerald-400/20 drop-shadow-[0_0_12px_rgba(52,211,153,0.6)] mt-1" 
+                                />
+                            )}
+                            
+                            {/* පොඩි Sparkle එකත් අයින් කරේ නෑ, ඒකත් ලස්සනයි */}
+                            {!profile.is_verified && <Sparkles className="w-6 h-6" style={{ color: vibeColor }} />}
                         </h1>
-                        <p className="text-gray-500 dark:text-gray-400 font-medium text-lg">
+                        <p className="text-gray-500 dark:text-gray-400 font-medium text-lg mt-2">
                             {profile.bio ? profile.bio : "Exploring the Web3 Universe 🚀"}
                         </p>
                     </div>
@@ -123,7 +131,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     </div>
                 </div>
 
-                {/* 📑 TABS MENU (✅ <Link> වෙනුවට <a> ටැග් එක දැම්මා) */}
+                {/* 📑 TABS MENU */}
                 <div className="flex overflow-x-auto no-scrollbar gap-2 mb-8 border-b border-gray-200 dark:border-gray-800 pb-px">
                     <a href={`/profile/${id}?tab=posts`} className={`px-6 py-4 font-bold text-sm md:text-base whitespace-nowrap border-b-4 transition-colors flex items-center gap-2 ${activeTab === 'posts' ? '' : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-white'}`} style={activeTab === 'posts' ? { borderBottomColor: vibeColor, color: vibeColor } : {}}>
                         <FileText size={18} /> Posts
@@ -136,12 +144,9 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     </a>
                 </div>
 
-                {/* ======================================================= */}
-                {/* 📍 TAB 1: POSTS CONTENT GRID */}
-                {/* ======================================================= */}
+                {/* 📍 TAB 1: POSTS */}
                 {activeTab === 'posts' && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        {/* ⬅️ LEFT SIDEBAR: INTRO */}
                         <div className="lg:col-span-3">
                             <div className="bg-white dark:bg-[#0F172A] p-5 rounded-2xl border border-gray-200 dark:border-gray-800 sticky top-24 shadow-sm">
                                 <h3 className="font-extrabold text-lg mb-4 text-gray-900 dark:text-white">Intro</h3>
@@ -168,7 +173,6 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                             </div>
                         </div>
 
-                        {/* 🎯 CENTER: ACTIVITY FEED */}
                         <div className="lg:col-span-6 space-y-6">
                             {posts && posts.map((post) => (
                                 <PostCard key={post.id} post={post} currentUserId={currentUser?.id} themeColor={vibeColor} />
@@ -183,7 +187,6 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                             )}
                         </div>
 
-                        {/* ➡️ RIGHT SIDEBAR: ONLINE & ADS */}
                         <div className="lg:col-span-3 hidden lg:block relative z-0">
                             <div className="sticky top-24 space-y-6 w-full overflow-hidden">
                                 <OnlineFollowers currentUserId={id} />
@@ -193,9 +196,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     </div>
                 )}
 
-                {/* ======================================================= */}
                 {/* 📍 TAB 2: ABOUT SECTION */}
-                {/* ======================================================= */}
                 {activeTab === 'about' && (
                     <div className="max-w-4xl mx-auto bg-white dark:bg-[#0F172A] p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm animate-in fade-in duration-500">
                         <h2 className="text-2xl font-black mb-8 border-b border-gray-100 dark:border-gray-800 pb-4">About {profile.display_name}</h2>
@@ -224,9 +225,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     </div>
                 )}
 
-                {/* ======================================================= */}
-                {/* 📍 TAB 3: PHOTOS GALLERY */}
-                {/* ======================================================= */}
+                {/* 📍 TAB 3: PHOTOS */}
                 {activeTab === 'photos' && (
                     <div className="animate-in fade-in duration-500">
                         <div className="flex items-center justify-between mb-6">
@@ -239,7 +238,6 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                                 {photoPosts.map((post) => (
                                     <div key={post.id} className="aspect-square rounded-2xl overflow-hidden group relative bg-gray-100 dark:bg-gray-800 cursor-pointer shadow-sm">
                                         <img src={post.image_url} alt="User Post" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                        {/* Hover Overlay */}
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <div className="flex items-center gap-4 text-white font-bold">
                                                 <span className="flex items-center gap-1"><Heart size={20} fill="white" /> {post.likes?.length || 0}</span>
