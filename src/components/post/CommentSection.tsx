@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
-import { Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2, Edit2, X, Check, MoreHorizontal } from 'lucide-react'
 
 export default function CommentSection({
     postId,
@@ -22,6 +22,9 @@ export default function CommentSection({
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [editContent, setEditContent] = useState('')
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null)
     const supabase = createClient()
 
     useEffect(() => {
@@ -86,7 +89,7 @@ export default function CommentSection({
 
             setComments(prev => prev.filter(c => c.id !== commentId))
             if (onCommentDeleted) onCommentDeleted()
-            
+
         } catch (err) {
             console.error('Error deleting comment:', err)
             alert('Could not delete comment.')
@@ -95,11 +98,42 @@ export default function CommentSection({
         }
     }
 
+    const handleEdit = (comment: any) => {
+        setEditingId(comment.id)
+        setEditContent(comment.content)
+    }
+
+    const handleCancelEdit = () => {
+        setEditingId(null)
+        setEditContent('')
+    }
+
+    const handleUpdate = async (commentId: string) => {
+        if (!editContent.trim()) return
+
+        try {
+            const { error } = await supabase
+                .from('comments')
+                .update({ content: editContent.trim() })
+                .eq('id', commentId)
+
+            if (error) throw error
+
+            setComments(prev => prev.map(c =>
+                c.id === commentId ? { ...c, content: editContent.trim() } : c
+            ))
+            setEditingId(null)
+        } catch (err) {
+            console.error('Error updating comment:', err)
+            alert('Could not update comment.')
+        }
+    }
+
     // --- අලුතින් එකතු කරපු Like Function එක ---
     const handleLike = async (commentId: string) => {
         if (!currentUserId) {
             alert("කරුණාකර Like කිරීම සඳහා ලොග් වෙන්න.");
-            return; 
+            return;
         }
 
         try {
@@ -108,15 +142,15 @@ export default function CommentSection({
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    commentId: commentId, 
-                    userId: currentUserId  
-                }), 
+                body: JSON.stringify({
+                    commentId: commentId,
+                    userId: currentUserId
+                }),
             });
 
             const data = await response.json();
             console.log("Like response:", data.message);
-            
+
         } catch (error) {
             console.error("Like කිරීමේදී දෝෂයක්:", error);
         }
@@ -150,28 +184,77 @@ export default function CommentSection({
                                         </div>
 
                                         {currentUserId === comment.user_id && (
-                                            <button 
-                                                onClick={() => handleDelete(comment.id)}
-                                                disabled={deletingId === comment.id}
-                                                className="text-gray-400 hover:text-red-500 transition-opacity opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                                            >
-                                                {deletingId === comment.id ? (
-                                                    <Loader2 size={14} className="animate-spin" />
-                                                ) : (
-                                                    <Trash2 size={14} />
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setOpenMenuId(openMenuId === comment.id ? null : comment.id)}
+                                                    className="p-1 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                >
+                                                    <MoreHorizontal size={16} />
+                                                </button>
+
+                                                {openMenuId === comment.id && (
+                                                    <div className="absolute right-0 top-6 w-32 bg-white dark:bg-[#1E293B] rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-10">
+                                                        <button
+                                                            onClick={() => { handleEdit(comment); setOpenMenuId(null); }}
+                                                            className="w-full flex items-center px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm transition-colors"
+                                                        >
+                                                            <Edit2 size={14} className="mr-2" /> Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { handleDelete(comment.id); setOpenMenuId(null); }}
+                                                            disabled={deletingId === comment.id}
+                                                            className="w-full flex items-center px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-red-500 text-sm transition-colors"
+                                                        >
+                                                            {deletingId === comment.id ? <Loader2 size={14} className="animate-spin mr-2" /> : <Trash2 size={14} className="mr-2" />} Delete
+                                                        </button>
+                                                    </div>
                                                 )}
-                                            </button>
+                                            </div>
                                         )}
                                     </div>
-                                    <p className="text-sm text-spl-black dark:text-gray-300 mt-1 whitespace-pre-wrap">{comment.content}</p>
-                                    
+
+                                    {editingId === comment.id ? (
+                                        <div className="mt-2">
+                                            <textarea
+                                                value={editContent}
+                                                onChange={(e) => setEditContent(e.target.value)}
+                                                className="w-full bg-white dark:bg-[#0F172A] border border-gray-200 dark:border-gray-700 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-spl-blue dark:text-gray-200"
+                                                rows={2}
+                                                autoFocus
+                                            />
+                                            <div className="flex justify-end space-x-2 mt-1">
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="flex items-center text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                                                >
+                                                    <X size={12} className="mr-1" /> Cancel
+                                                </button>
+                                                <button
+                                                    onClick={() => handleUpdate(comment.id)}
+                                                    disabled={!editContent.trim() || editContent.trim() === comment.content}
+                                                    className="flex items-center text-xs bg-spl-blue text-white px-3 py-1.5 rounded-md hover:bg-spl-blue-dark transition-colors disabled:opacity-50"
+                                                >
+                                                    <Check size={12} className="mr-1" /> Save
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-spl-black dark:text-gray-300 mt-1 whitespace-pre-wrap">{comment.content}</p>
+                                    )}
+
                                     {/* --- අලුතින් එකතු කරපු Like Button එක --- */}
-                                    <div className="flex items-center gap-4 mt-2">
-                                        <button 
+                                    <div className="flex items-center gap-4 mt-1 pl-2">
+                                        <button
                                             onClick={() => handleLike(comment.id)}
-                                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-500 transition-colors"
+                                            className="font-bold text-[12px] text-gray-500 dark:text-gray-400 hover:underline transition-all"
                                         >
-                                            👍 Like
+                                            Like
+                                        </button>
+                                        <button
+                                            onClick={() => handleEdit(comment)}
+                                            className="font-bold text-[12px] text-gray-500 dark:text-gray-400 hover:underline transition-all"
+                                        >
+                                            Reply
                                         </button>
                                     </div>
 

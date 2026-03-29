@@ -1,321 +1,176 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Heart, MessageCircle, Share2, Send, Trash2 } from 'lucide-react'
+import { Heart, MessageCircle, Share2, Trash2, MoreHorizontal, Link as LinkIcon } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import CommentSection from './CommentSection'
 
-// 🎬 YouTube සහ TikTok ලින්ක්ස් වලට සපෝට් කරන Helper Function එක
 const getEmbedUrl = (url: string) => {
     if (!url) return null;
-    
-    // YouTube Check
     const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*embed\/))([^&?]+)/);
     if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-    
-    // TikTok Check
     const ttMatch = url.match(/tiktok\.com\/.*\/video\/(\d+)/);
     if (ttMatch) return `https://www.tiktok.com/embed/v2/${ttMatch[1]}`;
-    
     return null;
 }
 
 interface PostCardProps {
-  post: any;
-  currentUserId?: string;
-  themeColor?: string;
+    post: any;
+    currentUserId?: string;
+    themeColor?: string;
 }
 
 export default function PostCard({ post, currentUserId, themeColor = '#10b981' }: PostCardProps) {
     const supabase = createClient()
     const router = useRouter()
-    
+
+    // ✅ Hydration Error එක වැළැක්වීමට mounted state එක
+    const [mounted, setMounted] = useState(false)
     const [isLiked, setIsLiked] = useState(false)
     const [likesCount, setLikesCount] = useState(0)
     const [showComments, setShowComments] = useState(false)
-    const [commentText, setCommentText] = useState('')
-    const [commentsList, setCommentsList] = useState<any[]>([])
     const [isDeleting, setIsDeleting] = useState(false)
+    const [commentCount, setCommentCount] = useState(0)
+    const [showPostOptions, setShowPostOptions] = useState(false)
 
-    // 🎬 Video URL එක ගන්න Variable එක
     const embedUrl = post?.video_url ? getEmbedUrl(post.video_url) : null;
 
     useEffect(() => {
+        setMounted(true) // Component එක ලෝඩ් වුණාම මේක true වෙනවා
         if (post.likes) {
             setLikesCount(post.likes.length)
             const alreadyLiked = post.likes.some((like: any) => like.user_id === currentUserId)
             setIsLiked(alreadyLiked)
         }
-    }, [currentUserId, post.likes])
+        setCommentCount(post.comments?.[0]?.count || 0)
+    }, [currentUserId, post.likes, post.comments])
 
-    // ✅ 1. ලයික් එක දාන ෆන්ක්ෂන් එක (Error Check කරන කෑලිත් එක්ක)
+    const fetchCommentsCount = async () => {
+        const { count } = await supabase
+            .from('comments')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', post.id)
+        if (count !== null) setCommentCount(count)
+    }
+
     const handleLike = async () => {
         if (!currentUserId) return toast.error("Please login to like!")
-
         const originalIsLiked = isLiked
         setIsLiked(!isLiked)
         setLikesCount(prev => originalIsLiked ? prev - 1 : prev + 1)
-
         try {
             if (originalIsLiked) {
                 await supabase.from('likes').delete().match({ post_id: post.id, user_id: currentUserId })
             } else {
-                // මුලින්ම ලයික් එක දානවා
-                const { error: likeError } = await supabase.from('likes').insert([{ post_id: post.id, user_id: currentUserId }])
-                if (likeError) throw likeError;
-                
-                const postOwnerId = post.user_id || post.author?.id || post.author_id; 
-                
-                // ඊළඟට Notification එක යවනවා
-                if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
-                    const { error: notifError } = await supabase.from('notifications').insert([{
-                        user_id: postOwnerId,
-                        receiver_id: postOwnerId,
-                        sender_id: currentUserId,
-                        from_user_id: currentUserId,
-                        type: 'like',
-                        post_id: post.id
-                    }])
-                    
-                    // 🚨 අවුලක් ගියොත් හරියටම අල්ලගන්න තැන
-                    if (notifError) {
-                        console.error("Notification Error:", notifError);
-                        toast.error("Notif Error: " + notifError.message); 
-                    }
-                }
+                await supabase.from('likes').insert([{ post_id: post.id, user_id: currentUserId }])
                 toast.success('Liked! ❤️')
             }
-
-            const { data } = await supabase.from('likes').select('id').eq('post_id', post.id)
-            if (data) setLikesCount(data.length)
-        } catch (error: any) {
-            setIsLiked(originalIsLiked)
-            toast.error("Error: " + error.message)
-            console.error(error)
-        }
+        } catch (error) { setIsLiked(originalIsLiked) }
     }
 
-    // ✅ 2. කමෙන්ට්ස් ගන්න ෆන්ක්ෂන් එක
-    const fetchComments = async () => {
-        const { data } = await supabase
-            .from('comments')
-            .select(`*, profiles:user_id(display_name, avatar_url)`)
-            .eq('post_id', post.id)
-            .order('created_at', { ascending: true })
-        if (data) setCommentsList(data)
-    }
-
-    useEffect(() => {
-        if (showComments) fetchComments()
-    }, [showComments])
-
-    // ✅ 3. කමෙන්ට් එකක් දාන ෆන්ක්ෂන් එක (Error Check කරන කෑලිත් එක්ක)
-    const handleCommentSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!commentText.trim() || !currentUserId) return
-
-        const { error: commentError } = await supabase
-            .from('comments')
-            .insert([{ post_id: post.id, user_id: currentUserId, content: commentText }])
-
-        if (!commentError) {
-            setCommentText('')
-            fetchComments()
-            toast.success('Comment posted! 💬')
-            
-            const postOwnerId = post.user_id || post.author?.id || post.author_id;
-            if (postOwnerId && String(postOwnerId) !== String(currentUserId)) {
-                const { error: notifError } = await supabase.from('notifications').insert([{
-                    user_id: postOwnerId,
-                    receiver_id:postOwnerId,
-                    sender_id: currentUserId,
-                    from_user_id: currentUserId,
-                    type: 'comment',
-                    post_id: post.id
-                }])
-                
-                // 🚨 අවුලක් ගියොත් අල්ලගන්න තැන
-                if (notifError) {
-                    console.error("Notification Error:", notifError);
-                    toast.error("Notif Error: " + notifError.message);
-                }
-            }
-        } else {
-            toast.error("Failed to post comment");
-        }
-    }
-
-    // 🚀 4. Share කරන අලුත් ෆන්ක්ෂන් එක
     const handleShare = async () => {
         const shareUrl = `${window.location.origin}/profile/${post.user_id}`;
-        
         if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `Post by ${post.author?.display_name}`,
-                    text: post.content ? post.content : "Check out this post on Space Link!",
-                    url: shareUrl,
-                });
-                toast.success('Shared successfully! 🚀');
-            } catch (error) {
-                console.log('Error sharing', error);
-            }
+            try { await navigator.share({ title: 'Space Link', url: shareUrl }); } catch (err) { }
         } else {
-            await navigator.clipboard.writeText(shareUrl);
+            navigator.clipboard.writeText(shareUrl);
             toast.success('Link copied! 📋');
         }
     }
 
-    // 🗑️ 5. Post එක මකන අලුත්ම ෆන්ක්ෂන් එක!
     const handleDeletePost = async () => {
-        if (!window.confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
-
+        if (!window.confirm('Delete this post?')) return;
         setIsDeleting(true);
         try {
-            if (post.image_url) {
-                const fileName = post.image_url.split('/').pop();
-                if (fileName) {
-                    await supabase.storage.from('posts').remove([fileName]); 
-                }
-            }
-
             const { error } = await supabase.from('posts').delete().eq('id', post.id);
-
             if (error) throw error;
-
-            toast.success('Post deleted successfully! 🗑️');
-            
+            toast.success('Post deleted! 🗑️');
             router.refresh();
-        } catch (error) {
-            console.error("Error deleting post:", error);
-            toast.error('Failed to delete post.');
-        } finally {
-            setIsDeleting(false);
-        }
+        } catch (error) { toast.error('Delete failed.'); } finally { setIsDeleting(false); }
     }
+
+    // ✅ සර්වර් එකේ HTML එකයි ක්ලයන්ට් එකේ HTML එකයි වෙනස් වීම වළක්වයි
+    if (!mounted) return null;
 
     return (
         <div className="bg-white dark:bg-[#0F172A] rounded-[32px] p-6 shadow-sm border border-gray-100 dark:border-gray-800 transition-all mb-5 relative group">
-            
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <Link href={`/profile/${post.user_id}`}>
-                        <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2 cursor-pointer hover:scale-105 transition-transform" style={{ borderColor: themeColor }}>
+                        <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2" style={{ borderColor: themeColor }}>
                             <img src={post.author?.avatar_url || '/default-avatar.png'} alt="avatar" className="w-full h-full object-cover" />
                         </div>
                     </Link>
                     <div>
                         <Link href={`/profile/${post.user_id}`}>
-                            <h4 className="font-bold text-gray-900 dark:text-white leading-tight cursor-pointer hover:underline" style={{ textDecorationColor: themeColor }}>
-                                {post.author?.display_name}
-                            </h4>
+                            <h4 className="font-bold text-gray-900 dark:text-white hover:underline">{post.author?.display_name}</h4>
                         </Link>
-                        <p className="text-xs text-gray-500 uppercase font-bold tracking-tighter opacity-60">Posted Just Now</p>
+                        {/* ✅ suppressesHydrationWarning එක දාමු dynamic dates තියෙන තැන් වලට */}
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter opacity-60" suppressHydrationWarning={true}>
+                            Posted Just Now
+                        </p>
                     </div>
                 </div>
-
-                {/* 🗑️ Delete Button එක (අයිතිකාරයාට විතරක් පේන්න) */}
-                {currentUserId === post.user_id && (
-                    <button 
-                        onClick={handleDeletePost}
-                        disabled={isDeleting}
-                        className={`p-2 rounded-full transition-all flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 ${isDeleting ? 'opacity-50 cursor-not-allowed' : 'opacity-0 group-hover:opacity-100'}`}
-                        title="Delete Post"
-                    >
-                        <Trash2 size={20} className={isDeleting ? 'animate-pulse' : ''} />
+                <div className="relative">
+                    <button onClick={() => setShowPostOptions(!showPostOptions)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors opacity-0 group-hover:opacity-100">
+                        <MoreHorizontal size={20} />
                     </button>
-                )}
+                    {showPostOptions && (
+                        <div className="absolute right-0 top-10 w-40 bg-white dark:bg-[#1E293B] rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 z-10">
+                            {currentUserId === post.user_id && (
+                                <button onClick={() => { setShowPostOptions(false); handleDeletePost(); }} disabled={isDeleting} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-red-500 text-sm font-medium transition-colors">
+                                    <Trash2 size={16} />
+                                    Delete post
+                                </button>
+                            )}
+                            <button onClick={() => { setShowPostOptions(false); handleShare(); }} className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium transition-colors">
+                                <LinkIcon size={16} />
+                                Copy link
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
-            
-            {/* Content Area */}
+
             <div className="mb-6">
                 <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed mb-4">{post.content}</p>
-                
-                {/* 🖼️ Image Display */}
                 {post.image_url && (
                     <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-4">
                         <img src={post.image_url} alt="post" className="w-full h-auto" />
                     </div>
                 )}
-
-                {/* 🎬 Video Player Display */}
                 {embedUrl && (
-                    <div className="mt-4 w-full aspect-video rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-black relative shadow-lg">
-                        <iframe 
-                            src={embedUrl} 
-                            className="absolute top-0 left-0 w-full h-full"
-                            frameBorder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowFullScreen
-                        ></iframe>
+                    <div className="mt-4 w-full aspect-video rounded-2xl overflow-hidden relative shadow-lg">
+                        <iframe src={embedUrl} className="absolute top-0 left-0 w-full h-full" frameBorder="0" allowFullScreen></iframe>
                     </div>
                 )}
             </div>
 
-            {/* Actions (Like, Comment & Share) */}
-            <div className="flex items-center gap-6 pt-4 border-t border-gray-50 dark:border-gray-800">
-                {/* ❤️ Like Button */}
-                <button onClick={handleLike} className="flex items-center gap-2 transition-all active:scale-125" style={{ color: isLiked ? themeColor : '#94a3b8' }}>
-                    <Heart size={24} fill={isLiked ? themeColor : "transparent"} stroke={isLiked ? themeColor : "currentColor"} />
-                    <span className="font-bold text-lg">{likesCount}</span>
+            <div className="flex items-center justify-between pt-1 pb-1 px-1 border-t border-gray-100 dark:border-gray-800 mt-2">
+                <button onClick={handleLike} className="flex items-center justify-center flex-1 gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 rounded-lg transition-colors font-semibold text-sm" style={{ color: isLiked ? themeColor : '#64748b' }}>
+                    <Heart size={20} fill={isLiked ? themeColor : "transparent"} stroke={isLiked ? themeColor : "currentColor"} />
+                    Like {likesCount > 0 && `(${likesCount})`}
                 </button>
-                
-                {/* 💬 Comment Toggle Button */}
-                <button onClick={() => setShowComments(!showComments)} className="flex items-center gap-2" style={{ color: showComments ? themeColor : '#94a3b8' }}>
-                    <MessageCircle size={24} />
-                    <span className="font-bold text-lg">{commentsList.length || post.comments?.[0]?.count || 0}</span>
+                <button onClick={() => setShowComments(!showComments)} className="flex items-center justify-center flex-1 gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 rounded-lg transition-colors text-gray-500 font-semibold text-sm">
+                    <MessageCircle size={20} />
+                    Comment {commentCount > 0 && `(${commentCount})`}
                 </button>
-
-                {/* 🚀 Share Button එක */}
-                <button onClick={handleShare} className="flex items-center gap-2 text-gray-400 hover:text-blue-500 transition-all ml-auto hover:scale-110">
-                    <Share2 size={24} />
+                <button onClick={handleShare} className="flex items-center justify-center flex-1 gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-800/60 rounded-lg transition-colors text-gray-500 font-semibold text-sm">
+                    <Share2 size={20} />
+                    Share
                 </button>
             </div>
 
-            {/* Comments Section */}
             {showComments && (
-                <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-800 space-y-4">
-                    <div className="max-h-60 overflow-y-auto space-y-4 pr-2">
-                        {commentsList.length === 0 && (
-                            <p className="text-gray-500 text-sm text-center py-2 italic">No comments yet. Be the first!</p>
-                        )}
-                        {commentsList.map((comment) => (
-                            <div key={comment.id} className="flex gap-3">
-                                <Link href={`/profile/${comment.user_id}`} className="shrink-0">
-                                    <img src={comment.profiles?.avatar_url || '/default-avatar.png'} className="w-8 h-8 rounded-full cursor-pointer hover:ring-2 hover:ring-emerald-500 transition-all" alt="avatar" />
-                                </Link>
-                                <div className="bg-gray-100 dark:bg-gray-800/60 p-3 rounded-2xl flex-1 text-sm">
-                                    <Link href={`/profile/${comment.user_id}`}>
-                                        <p className="font-bold text-gray-900 dark:text-white cursor-pointer hover:underline">{comment.profiles?.display_name}</p>
-                                    </Link>
-                                    <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Comment Input Form */}
-                    <form onSubmit={handleCommentSubmit} className="flex items-center gap-3 mt-4">
-                        <input 
-                            type="text" 
-                            value={commentText} 
-                            onChange={(e) => setCommentText(e.target.value)} 
-                            placeholder="Add a comment..." 
-                            className="w-full bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-white rounded-2xl py-3 px-5 outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-700 transition-all" 
-                        />
-                        <button 
-                            type="submit" 
-                            disabled={!commentText.trim()}
-                            className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all disabled:opacity-30"
-                            style={{ color: themeColor }}
-                        >
-                            <Send size={20} />
-                        </button>
-                    </form>
-                </div>
+                <CommentSection
+                    postId={post.id}
+                    currentUserId={currentUserId}
+                    onCommentAdded={fetchCommentsCount}
+                    onCommentDeleted={fetchCommentsCount}
+                />
             )}
         </div>
     )
