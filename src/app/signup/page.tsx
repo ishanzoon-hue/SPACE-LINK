@@ -4,10 +4,9 @@ import { signup } from './actions'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useFormStatus } from 'react-dom'
-import { Suspense } from 'react'
-import { Loader2, Mail, Lock, User as UserIcon, Rocket, Sparkles, ShieldCheck } from 'lucide-react'
+import { Suspense, useState, useEffect } from 'react' // useEffect සහ useState ඇඩ් කරා Hydration වලට
+import { Loader2, Mail, Lock, User as UserIcon, Rocket, Sparkles, ShieldCheck, Gift } from 'lucide-react' // ✅ Gift icon එක ඇඩ් කරා
 
-// ⏳ Loading වෙනකොට බටන් එක වෙනස් වෙන කෑල්ල (Submit Button)
 function SubmitButton() {
     const { pending } = useFormStatus()
     return (
@@ -25,16 +24,13 @@ function SubmitButton() {
     )
 }
 
-// 📝 Form එකේ ඇතුලේ කෑල්ල
 function SignupForm() {
     const searchParams = useSearchParams()
     const error = searchParams.get('error')
-    const refCode = searchParams.get('ref') // 🎁 Referral ලින්ක් එකෙන් එන ID එක අල්ලගන්නවා
+    const refCode = searchParams.get('ref')
 
     return (
         <form action={signup} className="space-y-4">
-            
-            {/* 🎁 මේකෙන් තමයි backend එකට referral ID එක යවන්නේ (හංගලා තියෙන්නේ) */}
             {refCode && <input type="hidden" name="ref" value={refCode} />}
 
             {error && (
@@ -49,7 +45,6 @@ function SignupForm() {
                 </div>
             )}
 
-            {/* Display Name */}
             <div className="space-y-1.5">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Display Name</label>
                 <div className="relative">
@@ -61,12 +56,11 @@ function SignupForm() {
                         name="displayName"
                         required
                         placeholder="Space Explorer"
-                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
+                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all"
                     />
                 </div>
             </div>
 
-            {/* Email */}
             <div className="space-y-1.5">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Email Address</label>
                 <div className="relative">
@@ -78,12 +72,11 @@ function SignupForm() {
                         name="email"
                         required
                         placeholder="you@orbit.com"
-                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
+                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all"
                     />
                 </div>
             </div>
 
-            {/* Password */}
             <div className="space-y-1.5">
                 <label className="text-sm font-bold text-gray-700 dark:text-gray-300 ml-1">Password</label>
                 <div className="relative">
@@ -95,7 +88,7 @@ function SignupForm() {
                         name="password"
                         required
                         placeholder="••••••••"
-                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
+                        className="w-full pl-11 pr-4 py-3 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all"
                     />
                 </div>
             </div>
@@ -105,29 +98,31 @@ function SignupForm() {
     )
 }
 
-// 🌟 Main Page Wrapper
 export default function SignupPage() {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    if (!mounted) return null // ✅ Hydration mismatch එක වළක්වන්න
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020817] p-4 relative overflow-hidden transition-colors">
-            
-            {/* 🌌 Background Glowing Effects */}
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020817] p-4 relative overflow-hidden transition-colors" suppressHydrationWarning>
             <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px] pointer-events-none"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-teal-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-            {/* 🚀 The Card */}
             <div className="max-w-md w-full bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-gray-100 dark:border-white/10 p-8 relative z-10">
-                
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-emerald-500/30 transform rotate-3">
                         <Sparkles size={32} className="text-white" />
                     </div>
-                    <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Join Elimeno</h1>
+                    <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-2 tracking-tight">Join Antigravity</h1>
                     <p className="text-gray-500 dark:text-gray-400 text-sm font-medium flex items-center justify-center gap-1.5">
                         <ShieldCheck size={16} className="text-emerald-500" /> Secure Web3 Orbit
                     </p>
                 </div>
 
-                {/* 🔄 Suspense එක දැම්මේ useSearchParams පාවිච්චි කරන නිසා */}
                 <Suspense fallback={<div className="flex justify-center p-8"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>}>
                     <SignupForm />
                 </Suspense>
