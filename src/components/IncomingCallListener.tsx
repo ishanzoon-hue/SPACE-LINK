@@ -5,6 +5,19 @@ import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Phone, PhoneOff, Video } from 'lucide-react'
 
+// Pre-warm AudioContext on first user gesture (mobile browsers block autoplay without this)
+let sharedAudioCtx: AudioContext | null = null
+
+function getOrCreateAudioCtx(): AudioContext {
+    if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+        sharedAudioCtx = new AudioContext()
+    }
+    if (sharedAudioCtx.state === 'suspended') {
+        sharedAudioCtx.resume()
+    }
+    return sharedAudioCtx
+}
+
 export default function IncomingCallListener() {
     const supabase = createClient()
     const router = useRouter()
@@ -12,7 +25,26 @@ export default function IncomingCallListener() {
     const [incomingCall, setIncomingCall] = useState<any>(null)
     const [callerProfile, setCallerProfile] = useState<any>(null)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-    const audioRef = useRef<HTMLAudioElement | null>(null)
+    const ringIntervalRef = useRef<any>(null)
+    const timeoutRef = useRef<any>(null)
+
+    // Pre-warm AudioContext on ANY user interaction (click/touch/key)
+    useEffect(() => {
+        const warmUp = () => {
+            try {
+                getOrCreateAudioCtx()
+            } catch (e) { }
+        }
+        document.addEventListener('click', warmUp, { once: false })
+        document.addEventListener('touchstart', warmUp, { once: false })
+        document.addEventListener('keydown', warmUp, { once: false })
+
+        return () => {
+            document.removeEventListener('click', warmUp)
+            document.removeEventListener('touchstart', warmUp)
+            document.removeEventListener('keydown', warmUp)
+        }
+    }, [])
 
     // Get current user on mount
     useEffect(() => {
@@ -48,61 +80,8 @@ export default function IncomingCallListener() {
 
                     if (profile) setCallerProfile(profile)
 
-                    // Play realistic phone ringtone using Web Audio API
-                    try {
-                        const audioCtx = new AudioContext()
-
-                        // Realistic phone ring: dual-tone (440Hz + 480Hz), rings for 1s, pauses 2s
-                        const playRing = () => {
-                            // First tone
-                            const osc1 = audioCtx.createOscillator()
-                            const osc2 = audioCtx.createOscillator()
-                            const gainNode = audioCtx.createGain()
-
-                            osc1.connect(gainNode)
-                            osc2.connect(gainNode)
-                            gainNode.connect(audioCtx.destination)
-
-                            // US phone ring tones
-                            osc1.frequency.value = 440
-                            osc2.frequency.value = 480
-                            osc1.type = 'sine'
-                            osc2.type = 'sine'
-
-                            // Volume envelope: fade in, sustain, fade out
-                            const now = audioCtx.currentTime
-                            gainNode.gain.setValueAtTime(0, now)
-                            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.05)
-                            gainNode.gain.setValueAtTime(0.15, now + 0.4)
-                            gainNode.gain.linearRampToValueAtTime(0, now + 0.45)
-                            // Second burst
-                            gainNode.gain.linearRampToValueAtTime(0.15, now + 0.6)
-                            gainNode.gain.setValueAtTime(0.15, now + 1.0)
-                            gainNode.gain.linearRampToValueAtTime(0, now + 1.05)
-
-                            osc1.start(now)
-                            osc2.start(now)
-                            osc1.stop(now + 1.1)
-                            osc2.stop(now + 1.1)
-                        }
-
-                        playRing()
-                        // Ring pattern: ring 1s, silence 2s = 3s cycle
-                        const interval = setInterval(playRing, 3000)
-
-                        // Auto-dismiss after 30 seconds
-                        setTimeout(() => {
-                            clearInterval(interval)
-                            setIncomingCall(null)
-                            setCallerProfile(null)
-                            audioCtx.close()
-                        }, 30000)
-
-                        // Store interval for cleanup
-                        audioRef.current = { interval, audioCtx } as any
-                    } catch (e) {
-                        // Audio not available, just show visual
-                    }
+                    // Start ringing
+                    startRingtone()
                 }
             })
             .subscribe()
@@ -111,6 +90,68 @@ export default function IncomingCallListener() {
             supabase.removeChannel(channel)
         }
     }, [currentUserId])
+
+    const startRingtone = () => {
+        try {
+            const audioCtx = getOrCreateAudioCtx()
+
+            const playRing = () => {
+                try {
+                    if (audioCtx.state === 'suspended') audioCtx.resume()
+
+                    const osc1 = audioCtx.createOscillator()
+                    const osc2 = audioCtx.createOscillator()
+                    const gainNode = audioCtx.createGain()
+
+                    osc1.connect(gainNode)
+                    osc2.connect(gainNode)
+                    gainNode.connect(audioCtx.destination)
+
+                    osc1.frequency.value = 440
+                    osc2.frequency.value = 480
+                    osc1.type = 'sine'
+                    osc2.type = 'sine'
+
+                    const now = audioCtx.currentTime
+                    gainNode.gain.setValueAtTime(0, now)
+                    gainNode.gain.linearRampToValueAtTime(0.2, now + 0.05)
+                    gainNode.gain.setValueAtTime(0.2, now + 0.4)
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.45)
+                    gainNode.gain.linearRampToValueAtTime(0.2, now + 0.6)
+                    gainNode.gain.setValueAtTime(0.2, now + 1.0)
+                    gainNode.gain.linearRampToValueAtTime(0, now + 1.05)
+
+                    osc1.start(now)
+                    osc2.start(now)
+                    osc1.stop(now + 1.1)
+                    osc2.stop(now + 1.1)
+                } catch (e) { }
+            }
+
+            playRing()
+            ringIntervalRef.current = setInterval(playRing, 3000)
+
+            // Auto-dismiss after 30 seconds
+            timeoutRef.current = setTimeout(() => {
+                cleanup()
+            }, 30000)
+
+        } catch (e) {
+            // Audio not available, just show visual
+        }
+    }
+
+    // Also try to play via vibration on mobile
+    useEffect(() => {
+        if (incomingCall && navigator.vibrate) {
+            // Vibrate pattern: vibrate 500ms, pause 500ms, repeat
+            const vibratePattern = [500, 300, 500, 300, 500, 300, 500, 300, 500, 300, 500, 300, 500, 300, 500, 300, 500, 300, 500]
+            navigator.vibrate(vibratePattern)
+        }
+        return () => {
+            if (navigator.vibrate) navigator.vibrate(0) // Stop vibration on cleanup
+        }
+    }, [incomingCall])
 
     const acceptCall = () => {
         if (!incomingCall) return
@@ -121,7 +162,6 @@ export default function IncomingCallListener() {
     const rejectCall = async () => {
         if (!incomingCall) return
 
-        // Update call status to rejected
         await supabase
             .from('calls')
             .update({ status: 'rejected' })
@@ -132,19 +172,20 @@ export default function IncomingCallListener() {
 
     const cleanup = () => {
         try {
-            const ref = audioRef.current as any
-            if (ref?.interval) clearInterval(ref.interval)
-            if (ref?.audioCtx) ref.audioCtx.close()
+            if (ringIntervalRef.current) clearInterval(ringIntervalRef.current)
+            if (timeoutRef.current) clearTimeout(timeoutRef.current)
+            ringIntervalRef.current = null
+            timeoutRef.current = null
         } catch (e) { }
+        if (navigator.vibrate) navigator.vibrate(0)
         setIncomingCall(null)
         setCallerProfile(null)
-        audioRef.current = null
     }
 
     if (!incomingCall) return null
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" style={{ animation: 'fadeIn 0.3s ease-out' }}>
             <div className="bg-white dark:bg-[#1E293B] rounded-3xl shadow-2xl w-[340px] overflow-hidden border border-gray-200 dark:border-gray-700">
                 {/* Top section with gradient */}
                 <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-8 text-center relative overflow-hidden">
@@ -176,7 +217,6 @@ export default function IncomingCallListener() {
 
                 {/* Actions */}
                 <div className="p-6 flex items-center justify-center gap-8">
-                    {/* Reject */}
                     <button
                         onClick={rejectCall}
                         className="w-16 h-16 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 group"
@@ -184,7 +224,6 @@ export default function IncomingCallListener() {
                         <PhoneOff size={28} className="text-white group-hover:rotate-[135deg] transition-transform" />
                     </button>
 
-                    {/* Accept */}
                     <button
                         onClick={acceptCall}
                         className="w-16 h-16 bg-emerald-500 hover:bg-emerald-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-110 active:scale-95 animate-pulse group"
@@ -199,14 +238,11 @@ export default function IncomingCallListener() {
             </div>
 
             <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            `}</style>
         </div>
     )
 }
