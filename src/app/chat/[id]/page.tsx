@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, use } from 'react'
+import { useEffect, useState, useRef, useCallback, use } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -23,6 +23,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [uploading, setUploading] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
 
+  // Use ref to avoid stale closure in realtime subscription
+  const currentUserRef = useRef<any>(null)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -34,6 +37,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     scrollToBottom()
   }, [messages])
 
+  // Step 1: Auth & profile fetch 
   useEffect(() => {
     if (!receiverId) return;
 
@@ -41,6 +45,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUser(user)
+        currentUserRef.current = user
         fetchMessages(user.id, receiverId)
 
         // Mark as read
@@ -56,26 +61,41 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       setIsInitializing(false)
     }
     fetchData()
+  }, [receiverId])
 
-    const channel = supabase.channel('realtime-chat').on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'messages'
-    }, (payload) => {
-      if (
-        (payload.new.sender_id === currentUser?.id && payload.new.receiver_id === receiverId) ||
-        (payload.new.sender_id === receiverId && payload.new.receiver_id === currentUser?.id)
-      ) {
-        setMessages((prev) => {
-          // ensure no duplicates just in case
-          if (!prev.find(m => m.id === payload.new.id)) return [...prev, payload.new];
-          return prev;
-        })
-      }
-    }).subscribe()
+  // Step 2: Realtime subscription — separate effect, uses ref so closure never stale
+  useEffect(() => {
+    if (!receiverId) return;
 
-    return () => { supabase.removeChannel(channel) }
-  }, [receiverId, currentUser?.id])
+    const channel = supabase
+      .channel(`chat-${receiverId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, (payload: any) => {
+        const msg = payload.new
+        const userId = currentUserRef.current?.id
+        if (!userId) return
+
+        // Only accept messages that belong to this conversation
+        const isRelevant =
+          (msg.sender_id === userId && msg.receiver_id === receiverId) ||
+          (msg.sender_id === receiverId && msg.receiver_id === userId)
+
+        if (isRelevant) {
+          setMessages((prev) => {
+            if (prev.find(m => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          })
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [receiverId])
 
   const fetchMessages = async (currentUserId: string, friendId: string) => {
     const { data } = await supabase.from('messages')
@@ -87,13 +107,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
   const startVideoCall = async () => {
     if (!currentUser) return
-    const { error } = await supabase.from('calls').insert({
+
+    // Insert a call record so the other user gets a ringing notification
+    await supabase.from('calls').insert({
       caller_id: currentUser.id,
       receiver_id: receiverId,
       status: 'ringing'
     })
 
-    // Fallback if calls table doesn't exist yet, we still route to video-call!
     router.push(`/video-call/${receiverId}`)
   }
 
@@ -123,6 +144,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       is_read: false
     })
     setUploading(false)
+
+    // Reset file input so the same file can be sent again
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const sendMessage = async () => {
@@ -183,16 +207,16 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 bg-gray-50/30 dark:bg-transparent">
           <div className="text-center my-6">
-            <div className="inline-block w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-500/20 mb-3 flex items-center justify-center border-4 border-white dark:border-[#0F172A] shadow-sm">
+            <div className="inline-block w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-500/20 mb-3 overflow-hidden border-4 border-white dark:border-[#0F172A] shadow-sm">
               <img src={receiver?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80'} className="w-full h-full rounded-full object-cover" />
             </div>
             <h3 className="font-bold text-gray-800 dark:text-gray-200">Say hi to {receiver?.display_name}!</h3>
-            <p className="text-xs text-gray-500 mt-1">Chat securely on the Antigravity Orbit</p>
+            <p className="text-xs text-gray-500 mt-1">Chat securely on the Space Link network</p>
           </div>
 
           {messages.map((msg, idx) => {
             const isMe = msg.sender_id === currentUser?.id
-            const isLastInGroup = idx === messages.length - 1 || messages[idx + 1].sender_id !== msg.sender_id;
+            const isLastInGroup = idx === messages.length - 1 || messages[idx + 1]?.sender_id !== msg.sender_id;
 
             return (
               <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -203,17 +227,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
                 <div className={`max-w-[75%] sm:max-w-[60%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   <div className={`px-4 py-2.5 shadow-sm text-[15px] leading-relaxed 
-                                    ${isMe
+                    ${isMe
                       ? `bg-emerald-500 text-white rounded-[20px] ${isLastInGroup ? 'rounded-br-sm' : ''}`
                       : `bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-700/50 rounded-[20px] ${isLastInGroup ? 'rounded-bl-sm' : ''}`
-                    }
-                                `}>
+                    }`}>
                     {msg.content}
                     {msg.image_url && <img src={msg.image_url} alt="sent image" className="max-w-full h-auto rounded-xl mt-1.5 object-cover max-h-[300px]" />}
                   </div>
                   {isLastInGroup && (
                     <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 px-1">
-                      {format(new Date(msg.created_at), 'h:mm a')} {isMe && msg.is_read ? '• Read' : ''}
+                      {(() => { try { return format(new Date(msg.created_at), 'h:mm a') } catch { return '' } })()}
+                      {isMe && msg.is_read ? ' • Read' : ''}
                     </span>
                   )}
                 </div>
@@ -264,8 +288,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               onClick={sendMessage}
               disabled={!newMessage.trim() && !uploading}
               className={`p-3.5 rounded-full shrink-0 mb-0.5 transition-all shadow-md ${newMessage.trim() || uploading
-                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white hover:-translate-y-0.5'
-                  : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white hover:-translate-y-0.5'
+                : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                 }`}
             >
               {uploading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} className="ml-0.5" />}
