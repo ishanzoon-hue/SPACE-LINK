@@ -5,7 +5,7 @@ import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle' 
-import { Home, MessageSquare, User, TrendingUp, Trophy, Radio } from 'lucide-react' // ✅ Radio අයිකන් එක එකතු කළා
+import { Home, MessageSquare, User, TrendingUp, Trophy, Radio } from 'lucide-react'
 import MobileMenu from './MobileMenu'
 
 export default async function Navbar() {
@@ -33,10 +33,8 @@ export default async function Navbar() {
         notifications = data || []
     }
 
-    // Icon button style - touch friendly
     const iconBtnStyle = "p-2 sm:p-2.5 rounded-full text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-gray-800 hover:text-emerald-500 transition-all flex items-center justify-center shrink-0 cursor-pointer min-h-[44px] min-w-[44px]"
     
-    // Tooltip style - desktop only
     const tooltipStyle = "absolute top-full mt-1.5 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap shadow-xl pointer-events-none z-[120] hidden sm:block"
 
     return (
@@ -61,15 +59,14 @@ export default async function Navbar() {
                     <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                         {user ? (
                             <>
-                                {/* Desktop Icons */}
+                                {/* Desktop Icons (Phone එකේදී මේ ටික හැංගෙනවා) */}
                                 <div className="hidden sm:flex items-center gap-0.5 sm:gap-1">
                                     <NavIcon href="/" icon={<Home size={20} />} tooltip="Home" />
                                     
-                                    {/* 🔴 අලුත් LIVE Stream Button එක */}
+                                    {/* 🔴 LIVE Stream Button (Desktop) */}
                                     <div className="relative group">
                                         <Link href="/live" className={`${iconBtnStyle} hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500`}>
                                             <Radio size={20} className="animate-pulse" />
-                                            {/* දිලිසෙන රතු පාට Dot එක */}
                                             <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                                             <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-ping opacity-75"></span>
                                         </Link>
@@ -101,6 +98,13 @@ export default async function Navbar() {
                                         <span className={tooltipStyle}>Log Out</span>
                                     </div>
                                 </div>
+
+                                {/* 🔴 Mobile LIVE Stream Button (Phone එකේ විතරක් පේන්න) */}
+                                <Link href="/live" className="sm:hidden relative p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-all flex items-center justify-center mr-1">
+                                    <Radio size={22} className="animate-pulse" />
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-ping opacity-75"></span>
+                                </Link>
 
                                 {/* Mobile Menu Button */}
                                 <MobileMenu userId={user.id} notifications={notifications} />
