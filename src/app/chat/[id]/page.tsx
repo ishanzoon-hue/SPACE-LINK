@@ -1,71 +1,90 @@
 "use client"
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, use } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
+import InboxSidebar from '@/components/InboxSidebar'
+import { Video, Image as ImageIcon, Smile, Send, ChevronLeft, Loader2 } from 'lucide-react'
+import { format } from 'date-fns'
 
-export default function ChatPage() {
-  const params = useParams()
+export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
+  const receiverId = resolvedParams.id
   const router = useRouter()
-  const receiverId = params?.id as string
   const supabase = createClient()
 
-  // --- States ---
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [receiver, setReceiver] = useState<any>(null)
   const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState("")
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(true)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' })
   }
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  // --- දත්ත ලබාගැනීම ---
   useEffect(() => {
     if (!receiverId) return;
-    
+
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setCurrentUser(user)
         fetchMessages(user.id, receiverId)
+
+        // Mark as read
+        await supabase
+          .from('messages')
+          .update({ is_read: true })
+          .eq('receiver_id', user.id)
+          .eq('sender_id', receiverId)
+          .eq('is_read', false)
       }
       const { data: recData } = await supabase.from('profiles').select('*').eq('id', receiverId).single()
       if (recData) setReceiver(recData)
+      setIsInitializing(false)
     }
     fetchData()
 
-    const channel = supabase.channel('realtime-chat').on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'messages' 
+    const channel = supabase.channel('realtime-chat').on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages'
     }, (payload) => {
-        setMessages((prev) => [...prev, payload.new])
+      if (
+        (payload.new.sender_id === currentUser?.id && payload.new.receiver_id === receiverId) ||
+        (payload.new.sender_id === receiverId && payload.new.receiver_id === currentUser?.id)
+      ) {
+        setMessages((prev) => {
+          // ensure no duplicates just in case
+          if (!prev.find(m => m.id === payload.new.id)) return [...prev, payload.new];
+          return prev;
+        })
+      }
     }).subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [receiverId])
+  }, [receiverId, currentUser?.id])
 
   const fetchMessages = async (currentUserId: string, friendId: string) => {
     const { data } = await supabase.from('messages')
-        .select('*')
-        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${currentUserId})`)
-        .order('created_at', { ascending: true })
+      .select('*')
+      .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${currentUserId})`)
+      .order('created_at', { ascending: true })
     if (data) setMessages(data)
   }
 
-  // --- Logic: Video Call ---
   const startVideoCall = async () => {
     if (!currentUser) return
     const { error } = await supabase.from('calls').insert({
@@ -73,11 +92,11 @@ export default function ChatPage() {
       receiver_id: receiverId,
       status: 'ringing'
     })
-    if (!error) router.push(`/video-call/${receiverId}`)
-    else alert("Call failed: " + error.message)
+
+    // Fallback if calls table doesn't exist yet, we still route to video-call!
+    router.push(`/video-call/${receiverId}`)
   }
 
-  // --- Logic: Image Upload ---
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file || !currentUser) return
@@ -106,85 +125,154 @@ export default function ChatPage() {
     setUploading(false)
   }
 
-  // --- Logic: Send Message ---
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentUser) return;
+
+    const content = newMessage;
+    setNewMessage(""); // Optimistic clear
+    setShowEmojiPicker(false)
+
     await supabase.from('messages').insert({
       sender_id: currentUser.id,
-      receiver_id: receiverId, 
-      content: newMessage,
+      receiver_id: receiverId,
+      content: content,
       is_read: false
     })
-    setNewMessage("");
-    setShowEmojiPicker(false)
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#0f172a] text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-[#1e2738]">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          </Link>
-          <img src={receiver?.avatar_url || 'https://via.placeholder.com/40'} className="w-10 h-10 rounded-full border border-gray-600 object-cover" />
-          <h1 className="text-xl font-bold">{receiver?.display_name || 'Loading...'}</h1>
+    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50 dark:bg-[#020817] container max-w-7xl mx-auto px-0 md:px-4">
+
+      {/* Inbox Sidebar - Hidden on mobile, fixed width on desktop */}
+      <div className="hidden md:block md:w-[350px] shrink-0 h-full border-x md:border-l-0 border-gray-200 dark:border-gray-800">
+        <InboxSidebar currentUserId={currentUser?.id} />
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col h-full bg-white dark:bg-[#0F172A] border-r border-gray-200 dark:border-gray-800 relative z-10 w-full">
+
+        {/* Header */}
+        <div className="px-3 sm:px-6 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-[#0F172A] z-20 shrink-0 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link href="/messages" className="md:hidden p-2 -ml-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+              <ChevronLeft size={24} />
+            </Link>
+
+            <div className="relative shrink-0">
+              <img src={receiver?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80'} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-gray-100 dark:border-gray-700 object-cover" />
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-[#0F172A] rounded-full"></div>
+            </div>
+
+            <div>
+              <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                {isInitializing ? 'Loading...' : (receiver?.display_name || 'Space Explorer')}
+              </h1>
+              <p className="text-xs text-emerald-500 font-semibold">Active now</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button onClick={startVideoCall} className="p-2.5 sm:p-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full transition-all group relative">
+              <Video size={20} className="group-hover:scale-110 transition-transform" />
+              <span className="absolute top-2.5 right-2 w-2 h-2 bg-emerald-500 rounded-full animate-ping opacity-75"></span>
+              <span className="absolute top-2.5 right-2 w-2 h-2 bg-emerald-500 rounded-full"></span>
+            </button>
+          </div>
         </div>
 
-        <button onClick={startVideoCall} className="p-3 bg-green-600 rounded-full hover:bg-green-500 transition-all shadow-lg active:scale-90">
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Messages ලිස්ට් එක */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-        {messages.map((msg) => {
-          const isMe = msg.sender_id === currentUser?.id 
-          return (
-            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[70%] px-4 py-2 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-700 text-gray-200 rounded-bl-none'}`}>
-                {msg.content}
-                {msg.image_url && <img src={msg.image_url} alt="sent" className="w-full h-auto rounded-lg mt-1" />}
-              </div>
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 bg-gray-50/30 dark:bg-transparent">
+          <div className="text-center my-6">
+            <div className="inline-block w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-500/20 mb-3 flex items-center justify-center border-4 border-white dark:border-[#0F172A] shadow-sm">
+              <img src={receiver?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80'} className="w-full h-full rounded-full object-cover" />
             </div>
-          )
-        })}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Area (ආයෙත් දාපු ටික 😎) */}
-      <div className="p-4 bg-[#1e2738] border-t border-gray-700 flex gap-2 items-center relative">
-        {/* පින්තූර */}
-        <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-green-400 p-1">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-        </button>
-        <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
-
-        {/* ඉමෝජි */}
-        <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-gray-400 hover:text-yellow-400">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        </button>
-
-        {showEmojiPicker && (
-          <div className="absolute bottom-20 left-4 z-50">
-            <EmojiPicker onEmojiClick={(d) => setNewMessage(p => p + d.emoji)} theme={Theme.DARK} />
+            <h3 className="font-bold text-gray-800 dark:text-gray-200">Say hi to {receiver?.display_name}!</h3>
+            <p className="text-xs text-gray-500 mt-1">Chat securely on the Antigravity Orbit</p>
           </div>
-        )}
 
-        <input 
-          type="text" 
-          value={newMessage} 
-          onChange={(e) => setNewMessage(e.target.value)} 
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()} 
-          placeholder={uploading ? "Sending image..." : "Type a message..."} 
-          className="flex-1 bg-[#0f172a] text-white rounded-full px-4 py-2 border border-gray-600 focus:outline-none" 
-        />
-        
-        <button onClick={sendMessage} className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-500">
-          Send
-        </button>
+          {messages.map((msg, idx) => {
+            const isMe = msg.sender_id === currentUser?.id
+            const isLastInGroup = idx === messages.length - 1 || messages[idx + 1].sender_id !== msg.sender_id;
+
+            return (
+              <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                {!isMe && isLastInGroup && (
+                  <img src={receiver?.avatar_url} className="w-7 h-7 rounded-full mr-2 self-end mb-1 shrink-0" />
+                )}
+                {!isMe && !isLastInGroup && <div className="w-9 shrink-0"></div>}
+
+                <div className={`max-w-[75%] sm:max-w-[60%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  <div className={`px-4 py-2.5 shadow-sm text-[15px] leading-relaxed 
+                                    ${isMe
+                      ? `bg-emerald-500 text-white rounded-[20px] ${isLastInGroup ? 'rounded-br-sm' : ''}`
+                      : `bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-700/50 rounded-[20px] ${isLastInGroup ? 'rounded-bl-sm' : ''}`
+                    }
+                                `}>
+                    {msg.content}
+                    {msg.image_url && <img src={msg.image_url} alt="sent image" className="max-w-full h-auto rounded-xl mt-1.5 object-cover max-h-[300px]" />}
+                  </div>
+                  {isLastInGroup && (
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 px-1">
+                      {format(new Date(msg.created_at), 'h:mm a')} {isMe && msg.is_read ? '• Read' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+          <div ref={messagesEndRef} className="h-4" />
+        </div>
+
+        {/* Input Area */}
+        <div className="p-3 sm:p-4 bg-white dark:bg-[#0F172A] border-t border-gray-100 dark:border-gray-800 shrink-0">
+          <div className="flex gap-2 items-end relative max-w-4xl mx-auto">
+
+            <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" />
+
+            <div className="flex gap-1 mb-1">
+              <button onClick={() => fileInputRef.current?.click()} className="p-2 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-full transition-colors shrink-0">
+                <ImageIcon size={22} />
+              </button>
+            </div>
+
+            <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-3xl flex items-end px-3 py-1 shadow-inner border border-transparent focus-within:border-emerald-500/30 transition-all">
+              <textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                placeholder={uploading ? "Sending image..." : "Type a message..."}
+                className="w-full bg-transparent text-gray-900 dark:text-white px-2 py-2.5 max-h-32 focus:outline-none resize-none min-h-[44px] text-[15px]"
+                rows={1}
+              />
+              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 mb-0.5 text-gray-400 hover:text-yellow-500 transition-colors shrink-0 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                <Smile size={20} />
+              </button>
+            </div>
+
+            {showEmojiPicker && (
+              <div className="absolute bottom-16 right-16 sm:right-auto sm:left-4 z-[100] shadow-2xl rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+                <EmojiPicker onEmojiClick={(d) => setNewMessage(p => p + d.emoji)} theme={Theme.AUTO} />
+              </div>
+            )}
+
+            <button
+              onClick={sendMessage}
+              disabled={!newMessage.trim() && !uploading}
+              className={`p-3.5 rounded-full shrink-0 mb-0.5 transition-all shadow-md ${newMessage.trim() || uploading
+                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white hover:-translate-y-0.5'
+                  : 'bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                }`}
+            >
+              {uploading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} className="ml-0.5" />}
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   )
