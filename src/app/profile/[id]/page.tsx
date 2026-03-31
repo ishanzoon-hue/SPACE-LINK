@@ -114,9 +114,13 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     <div className="flex gap-3 mb-6 shrink-0">
                         {isOwnProfile ? (
                             <div className="flex gap-3">
-                                <button className="text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:-translate-y-1 shadow-lg shadow-emerald-500/20" style={{ backgroundColor: vibeColor }}>
+                                <Link 
+                                    href="/dashboard"
+                                    className="text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:-translate-y-1 shadow-lg shadow-emerald-500/20" 
+                                    style={{ backgroundColor: vibeColor }}
+                                >
                                     <LayoutDashboard size={20} /> Dashboard
-                                </button>
+                                </Link>
                                 <Link
                                     href="/settings"
                                     className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-6 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2"
