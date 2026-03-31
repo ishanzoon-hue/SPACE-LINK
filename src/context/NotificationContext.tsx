@@ -61,7 +61,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             .select(`
                 id, type, title, content, is_read, created_at,
                 from_user_id, user_id, post_id,
-                from_user:profiles!from_user_id(id, display_name, avatar_url, username),
+                from_user:profiles!from_user_id(id, display_name, avatar_url),
                 post:posts!post_id(content)
             `)
             .eq('user_id', user.id)   // your DB uses user_id
@@ -69,7 +69,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             .limit(50)
 
         if (error) {
-            console.error('Error loading notifications:', error)
+            console.error('Error loading notifications:', JSON.stringify(error, null, 2))
         } else {
             setNotifications((data || []).map(normalizeNotification))
         }
@@ -100,7 +100,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         .select(`
                             id, type, title, content, is_read, created_at,
                             from_user_id, user_id, post_id,
-                            from_user:profiles!from_user_id(id, display_name, avatar_url, username),
+                            from_user:profiles!from_user_id(id, display_name, avatar_url),
                             post:posts!post_id(content)
                         `)
                         .eq('id', payload.new.id)
