@@ -5,6 +5,7 @@ import { Users, LayoutDashboard, Settings, MessageSquare, Heart, Zap, Award, Sha
 import Link from 'next/link'
 import StatCard from '@/components/dashboard/StatCard'
 import WalletWidget from '@/components/dashboard/WalletWidget'
+import PromotionalBanner from '@/components/dashboard/PromotionalBanner'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -54,6 +55,8 @@ export default async function DashboardPage() {
                 {/* 🛡️ LEFT: Main Stats & Wallet (8 Columns) */}
                 <div className="lg:col-span-8 space-y-8">
                     
+                    <PromotionalBanner refCode={profile?.id.split('-')[0].toUpperCase() || 'ERRO'} />
+
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         <StatCard 
