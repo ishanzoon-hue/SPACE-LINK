@@ -88,10 +88,22 @@ export default function NotificationBell({ notifications: initialNotifications }
     }
 
     const getNotificationLink = (notification: Notification) => {
-        if (notification.post_id) return `/post/${notification.post_id}`
-        const sender = notification.from_user_id || notification.sender_id
-        if (notification.type === 'follow' && sender) return `/profile/${sender}`
+        const senderId = notification.from_user_id || notification.sender_id
+
+        // Post-related → go to the post
+        if (['like', 'comment', 'mention'].includes(notification.type) && notification.post_id)
+            return `/post/${notification.post_id}`
+
+        // Profile-related → go to sender's profile
+        if (['follow', 'accept_request'].includes(notification.type) && senderId)
+            return `/profile/${senderId}`
+
+        // Message → go to messages page
         if (notification.type === 'message') return '/messages'
+
+        // Fallback: if there's a post, go there; otherwise sender's profile
+        if (notification.post_id) return `/post/${notification.post_id}`
+        if (senderId) return `/profile/${senderId}`
         return '#'
     }
 

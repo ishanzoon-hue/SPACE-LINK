@@ -11,8 +11,8 @@ export default function NotificationsPage() {
     const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all')
 
     // Filter notifications
-    const filteredNotifications = activeFilter === 'all' 
-        ? notifications 
+    const filteredNotifications = activeFilter === 'all'
+        ? notifications
         : notifications.filter(n => !n.read)
 
     // Mark all as read when page loads (optional)
@@ -44,7 +44,7 @@ export default function NotificationsPage() {
 
     const getNotificationText = (notification: any) => {
         const displayName = notification.from_user?.display_name || 'Someone'
-        
+
         switch (notification.type) {
             case 'like':
                 return `${displayName} liked your post`
@@ -64,9 +64,22 @@ export default function NotificationsPage() {
     }
 
     const getNotificationLink = (notification: any) => {
-        if (notification.post_id) return `/post/${notification.post_id}`
-        if (notification.type === 'follow') return `/profile/${notification.sender_id}`
+        const senderId = notification.from_user_id || notification.sender_id
+
+        // Post-related → go to the post
+        if (['like', 'comment', 'mention'].includes(notification.type) && notification.post_id)
+            return `/post/${notification.post_id}`
+
+        // Profile-related → go to sender's profile
+        if (['follow', 'accept_request'].includes(notification.type) && senderId)
+            return `/profile/${senderId}`
+
+        // Message → go to messages page
         if (notification.type === 'message') return '/messages'
+
+        // Fallback: if there's a post, go there; otherwise sender's profile
+        if (notification.post_id) return `/post/${notification.post_id}`
+        if (senderId) return `/profile/${senderId}`
         return '#'
     }
 
@@ -89,7 +102,7 @@ export default function NotificationsPage() {
                                 </span>
                             )}
                         </div>
-                        
+
                         {/* Mark all as read button */}
                         {unreadCount > 0 && (
                             <button
@@ -106,21 +119,19 @@ export default function NotificationsPage() {
                     <div className="flex gap-2 mt-4">
                         <button
                             onClick={() => setActiveFilter('all')}
-                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                                activeFilter === 'all'
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeFilter === 'all'
                                     ? 'bg-emerald-500 text-white shadow-md'
                                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                            }`}
+                                }`}
                         >
                             All
                         </button>
                         <button
                             onClick={() => setActiveFilter('unread')}
-                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                                activeFilter === 'unread'
+                            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeFilter === 'unread'
                                     ? 'bg-emerald-500 text-white shadow-md'
                                     : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                            }`}
+                                }`}
                         >
                             Unread
                             {unreadCount > 0 && (
@@ -156,8 +167,8 @@ export default function NotificationsPage() {
                         <Bell size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-4 opacity-50" />
                         <h2 className="text-xl font-bold text-gray-600 dark:text-gray-400">No notifications</h2>
                         <p className="text-gray-500 dark:text-gray-500 mt-2">
-                            {activeFilter === 'unread' 
-                                ? "You've read all your notifications! 🎉" 
+                            {activeFilter === 'unread'
+                                ? "You've read all your notifications! 🎉"
                                 : "When someone interacts with you, it will show up here. 🛸"}
                         </p>
                     </div>
@@ -167,15 +178,14 @@ export default function NotificationsPage() {
                         {filteredNotifications.map((notification) => {
                             const { Icon, color, bg } = getNotificationIcon(notification.type)
                             const isUnread = !notification.read
-                            
+
                             return (
                                 <div
                                     key={notification.id}
-                                    className={`group relative rounded-2xl transition-all ${
-                                        isUnread 
+                                    className={`group relative rounded-2xl transition-all ${isUnread
                                             ? 'bg-gradient-to-r from-emerald-50/50 to-transparent dark:from-emerald-900/20 dark:to-transparent'
                                             : ''
-                                    }`}
+                                        }`}
                                 >
                                     <Link
                                         href={getNotificationLink(notification)}
@@ -185,14 +195,14 @@ export default function NotificationsPage() {
                                         className="block"
                                     >
                                         <div className="flex items-start gap-3 p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all active:scale-[0.99]">
-                                            
+
                                             {/* Avatar with Icon Badge */}
                                             <div className="relative shrink-0">
                                                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
                                                     {notification.from_user?.avatar_url ? (
-                                                        <img 
-                                                            src={notification.from_user.avatar_url} 
-                                                            alt="avatar" 
+                                                        <img
+                                                            src={notification.from_user.avatar_url}
+                                                            alt="avatar"
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
@@ -214,7 +224,7 @@ export default function NotificationsPage() {
                                                     </span>{' '}
                                                     {getNotificationText(notification)}
                                                 </p>
-                                                
+
                                                 {/* Post preview */}
                                                 {notification.post?.content && (
                                                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 line-clamp-1 italic">
@@ -227,14 +237,14 @@ export default function NotificationsPage() {
                                                     {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                                                 </p>
                                             </div>
-                                            
+
                                             {/* Unread indicator */}
                                             {isUnread && (
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 mt-2 shadow-[0_0_8px_#10b981]" />
                                             )}
                                         </div>
                                     </Link>
-                                    
+
                                     {/* Delete button (hover) */}
                                     <button
                                         onClick={(e) => {
