@@ -55,10 +55,15 @@ export default function MobileMenu({ userId, notifications }: MobileMenuProps) {
     return (
         <>
             {/* Menu Button */}
+            {/* 
+              * Invisible Hitbox — Touch Target Fix
+              * Icon: 24px | Tappable area: 48×48px (meets Apple HIG 44px & Google 48px)
+              * padding: 12px all sides → (24 + 12*2 = 48px)
+              */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="mobile-menu-button sm:hidden flex items-center justify-center min-h-[44px] min-w-[44px] rounded-full text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-gray-800 transition-all"
-                aria-label="Menu"
+                className="mobile-menu-button sm:hidden flex items-center justify-center min-h-[48px] min-w-[48px] p-3 rounded-full text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-gray-800 transition-all"
+                aria-label={isOpen ? 'Close menu' : 'Open menu'}
             >
                 {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
