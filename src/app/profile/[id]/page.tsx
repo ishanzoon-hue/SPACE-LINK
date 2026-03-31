@@ -6,7 +6,7 @@ import FriendButton from '@/components/post/FriendButton'
 import EditProfileModal from './EditProfileModal'
 import OnlineFollowers from '@/components/post/OnlineFollowers'
 import AdSection from '@/components/AdSection'
-import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck, Settings } from 'lucide-react'
+import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck, Settings, Smartphone, Instagram, Twitter, Linkedin, Map } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
@@ -222,27 +222,55 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                 {/* 📍 TAB 2: ABOUT SECTION */}
                 {activeTab === 'about' && (
                     <div className="max-w-4xl mx-auto bg-white dark:bg-[#0F172A] p-8 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm animate-in fade-in duration-500">
-                        <h2 className="text-2xl font-black mb-8 border-b border-gray-100 dark:border-gray-800 pb-4">About {profile.display_name}</h2>
+                        <div className="flex items-center justify-between mb-8 border-b border-gray-100 dark:border-gray-800 pb-4">
+                            <h2 className="text-2xl font-black">About {profile.display_name}</h2>
+                            <div className="flex gap-2">
+                                {profile.instagram_url && <a href={`https://instagram.com/${profile.instagram_url}`} target="_blank" className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl hover:text-pink-500 transition-colors"><Instagram size={20} /></a>}
+                                {profile.twitter_url && <a href={`https://twitter.com/${profile.twitter_url}`} target="_blank" className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl hover:text-blue-400 transition-colors"><Twitter size={20} /></a>}
+                                {profile.linkedin_url && <a href={`https://linkedin.com/in/${profile.linkedin_url}`} target="_blank" className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl hover:text-blue-600 transition-colors"><Linkedin size={20} /></a>}
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-lg">
                             {profile.bio && (
                                 <div className="col-span-1 md:col-span-2 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-2xl">
                                     <p className="text-gray-600 dark:text-gray-300 italic">"{profile.bio}"</p>
                                 </div>
                             )}
+                            
+                            {/* Places Lived */}
                             {profile.location && (
-                                <div className="flex items-start gap-4"><MapPin style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Current City</p><p className="font-bold">{profile.location}</p></div></div>
+                                <div className="flex items-start gap-4"><MapPin style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Current City</p><p className="font-bold">{profile.location}</p></div></div>
                             )}
+                            {profile.hometown && (
+                                <div className="flex items-start gap-4"><Map style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Hometown</p><p className="font-bold">{profile.hometown}</p></div></div>
+                            )}
+
+                            {/* Work & Ed */}
                             {profile.work && (
-                                <div className="flex items-start gap-4"><Briefcase style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Work</p><p className="font-bold">{profile.work}</p></div></div>
+                                <div className="flex items-start gap-4"><Briefcase style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Work</p><p className="font-bold">{profile.work}</p></div></div>
                             )}
                             {profile.education && (
-                                <div className="flex items-start gap-4"><GraduationCap style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Education</p><p className="font-bold">{profile.education}</p></div></div>
+                                <div className="flex items-start gap-4"><GraduationCap style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Education</p><p className="font-bold">{profile.education}</p></div></div>
                             )}
+
+                            {/* Basic Info */}
                             {profile.birthday && (
-                                <div className="flex items-start gap-4"><Cake style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Birthday</p><p className="font-bold">{new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div></div>
+                                <div className="flex items-start gap-4"><Cake style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Birthday</p><p className="font-bold">{new Date(profile.birthday).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p></div></div>
+                            )}
+                            {profile.gender && (
+                                <div className="flex items-start gap-4"><Users style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Gender</p><p className="font-bold capitalize">{profile.gender}</p></div></div>
+                            )}
+                            {profile.relationship_status && (
+                                <div className="flex items-start gap-4"><Heart style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Relationship</p><p className="font-bold capitalize">{profile.relationship_status.replace(/_/g, ' ')}</p></div></div>
+                            )}
+
+                            {/* Contact */}
+                            {profile.phone && (
+                                <div className="flex items-start gap-4"><Smartphone style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Phone</p><p className="font-bold">{profile.phone}</p></div></div>
                             )}
                             {profile.website && (
-                                <div className="flex items-start gap-4"><LinkIcon style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500">Website</p><a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-blue-500 truncate block max-w-[200px]">{profile.website.replace(/^https?:\/\//, '')}</a></div></div>
+                                <div className="flex items-start gap-4"><LinkIcon style={{ color: vibeColor }} size={28} className="shrink-0 mt-1" /><div><p className="text-sm text-gray-500 font-bold uppercase tracking-tighter">Website</p><a href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-blue-500 truncate block max-w-[200px]">{profile.website.replace(/^https?:\/\//, '')}</a></div></div>
                             )}
                         </div>
                     </div>

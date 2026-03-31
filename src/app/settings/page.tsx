@@ -13,12 +13,18 @@ import {
     ChevronRight,
     LogOut,
     ArrowLeft,
-    Check,
-    Loader2,
     ShieldAlert,
     ShieldCheck,
     Trash2,
-    Terminal
+    Terminal,
+    Smartphone,
+    Heart,
+    Instagram,
+    Twitter,
+    Linkedin,
+    Map,
+    Check,
+    Loader2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -188,32 +194,138 @@ export default function SettingsPage() {
                 {/* ⚙️ CONTENT AREA */}
                 <div className="lg:col-span-8 bg-white dark:bg-[#0F172A] rounded-[40px] p-8 border border-gray-100 dark:border-gray-800 shadow-sm min-h-[600px]">
 
-                    {/* SECTION: ACCOUNT */}
+                    {/* SECTION: ACCOUNT (EXPANDED) */}
                     {activeSection === 'account' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <h2 className="text-2xl font-black underline decoration-emerald-500 decoration-4 underline-offset-8">Account Information</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <SettingItem
-                                    label="Display Name"
-                                    value={profile.display_name}
-                                    onSave={(val) => handleUpdateProfile({ display_name: val })}
-                                />
-                                <SettingItem
-                                    label="Bio"
-                                    value={profile.bio || 'No bio set'}
-                                    type="textarea"
-                                    onSave={(val) => handleUpdateProfile({ bio: val })}
-                                />
-                                <SettingItem
-                                    label="Location"
-                                    value={profile.location || 'Not set'}
-                                    onSave={(val) => handleUpdateProfile({ location: val })}
-                                />
-                                <SettingItem
-                                    label="Website"
-                                    value={profile.website || 'Not set'}
-                                    onSave={(val) => handleUpdateProfile({ website: val })}
-                                />
+                            <h2 className="text-2xl font-black underline decoration-emerald-500 decoration-4 underline-offset-8">Account Details</h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Basic Information */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <User size={14} className="text-emerald-500" /> Basic Info
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <SettingItem
+                                            label="Display Name"
+                                            value={profile.display_name}
+                                            onSave={(val: string) => handleUpdateProfile({ display_name: val })}
+                                        />
+                                        <SettingItem
+                                            label="Bio"
+                                            value={profile.bio || ''}
+                                            type="textarea"
+                                            onSave={(val: string) => handleUpdateProfile({ bio: val })}
+                                        />
+                                        <SettingItem
+                                            label="Birthday"
+                                            value={profile.birthday || ''}
+                                            type="date"
+                                            onSave={(val: string) => handleUpdateProfile({ birthday: val })}
+                                        />
+                                        <div className="p-5 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30 border border-transparent">
+                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Gender</span>
+                                            <div className="flex gap-2">
+                                                {['male', 'female', 'other'].map((g) => (
+                                                    <button
+                                                        key={g}
+                                                        onClick={() => handleUpdateProfile({ gender: g })}
+                                                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${profile.gender === g ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white dark:bg-gray-900 text-gray-400'}`}
+                                                    >
+                                                        {g}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Contact & Education */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Smartphone size={14} className="text-emerald-500" /> Contact & Career
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <SettingItem
+                                            label="Phone Number"
+                                            value={profile.phone || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ phone: val })}
+                                        />
+                                        <SettingItem
+                                            label="Current Job / Work"
+                                            value={profile.work || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ work: val })}
+                                        />
+                                        <SettingItem
+                                            label="Education / University"
+                                            value={profile.education || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ education: val })}
+                                        />
+                                        <SettingItem
+                                            label="Website URL"
+                                            value={profile.website || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ website: val })}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Places Lived */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Map size={14} className="text-emerald-500" /> Places Lived
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <SettingItem
+                                            label="Current City"
+                                            value={profile.location || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ location: val })}
+                                        />
+                                        <SettingItem
+                                            label="Hometown"
+                                            value={profile.hometown || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ hometown: val })}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Relationships & Social */}
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Heart size={14} className="text-emerald-500" /> Relationships & Social
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="p-5 rounded-2xl bg-gray-50/50 dark:bg-gray-800/30 border border-transparent">
+                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Relationship Status</span>
+                                            <select 
+                                                value={profile.relationship_status || ''}
+                                                onChange={(e) => handleUpdateProfile({ relationship_status: e.target.value })}
+                                                className="w-full bg-white dark:bg-gray-900 p-3 rounded-xl border border-transparent outline-none text-xs font-bold"
+                                            >
+                                                <option value="">Select Status</option>
+                                                <option value="single">Single</option>
+                                                <option value="in_relationship">In a Relationship</option>
+                                                <option value="married">Married</option>
+                                                <option value="engaged">Engaged</option>
+                                                <option value="it_is_complicated">It's Complicated</option>
+                                            </select>
+                                        </div>
+                                        <SettingItem
+                                            label="Instagram Username"
+                                            value={profile.instagram_url || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ instagram_url: val })}
+                                        />
+                                        <SettingItem
+                                            label="Twitter / X"
+                                            value={profile.twitter_url || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ twitter_url: val })}
+                                        />
+                                        <SettingItem
+                                            label="LinkedIn Profile"
+                                            value={profile.linkedin_url || ''}
+                                            onSave={(val: string) => handleUpdateProfile({ linkedin_url: val })}
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -233,7 +345,7 @@ export default function SettingsPage() {
                                         { id: 'private', label: 'Private - Only me' }
                                     ]}
                                     value={profile.privacy_profile_visibility || 'public'}
-                                    onChange={(val) => handleUpdateProfile({ privacy_profile_visibility: val })}
+                                    onChange={(val: string) => handleUpdateProfile({ privacy_profile_visibility: val })}
                                 />
 
                                 <PrivacyToggle
@@ -245,7 +357,7 @@ export default function SettingsPage() {
                                         { id: 'friends', label: 'Friends' },
                                     ]}
                                     value={profile.privacy_post_default || 'public'}
-                                    onChange={(val) => handleUpdateProfile({ privacy_post_default: val })}
+                                    onChange={(val: string) => handleUpdateProfile({ privacy_post_default: val })}
                                 />
 
                                 <div className="space-y-4">
@@ -253,13 +365,13 @@ export default function SettingsPage() {
                                         label="Show Email Address"
                                         desc="Allow others to see your email on your profile"
                                         checked={profile.privacy_show_email}
-                                        onChange={(val) => handleUpdateProfile({ privacy_show_email: val })}
+                                        onChange={(val: boolean) => handleUpdateProfile({ privacy_show_email: val })}
                                     />
                                     <BooleanToggle
                                         label="Show Birthday"
                                         desc="Allow others to see your birth date"
                                         checked={profile.privacy_show_birthday}
-                                        onChange={(val) => handleUpdateProfile({ privacy_show_birthday: val })}
+                                        onChange={(val: boolean) => handleUpdateProfile({ privacy_show_birthday: val })}
                                     />
                                 </div>
                             </div>
