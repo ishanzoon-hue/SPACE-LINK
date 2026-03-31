@@ -1,7 +1,8 @@
 'use client'
 
 import { useSettings } from "@/context/SettingsContext"
-import { X, Palette, Type, Languages, Check } from "lucide-react"
+import Link from 'next/link'
+import { X, Palette, Type, Languages, Check, ShieldCheck, ChevronRight } from "lucide-react"
 
 export default function SettingsSidebar({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { vibeColor, updateVibeColor, fontFamily, updateFont, language, updateLang } = useSettings()
@@ -29,7 +30,7 @@ export default function SettingsSidebar({ isOpen, onClose }: { isOpen: boolean, 
 
       {/* 🎨 Settings Panel */}
       <div className="relative w-80 h-full bg-white dark:bg-[#0F172A] shadow-2xl p-6 border-l border-gray-100 dark:border-gray-800 animate-in slide-in-from-right duration-300">
-        
+
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-xl font-bold flex items-center gap-2">
             Settings <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-emerald-500">Vibe 2.0</span>
@@ -40,7 +41,7 @@ export default function SettingsSidebar({ isOpen, onClose }: { isOpen: boolean, 
         </div>
 
         <div className="space-y-8">
-          
+
           {/* 1. තේමා වර්ණය (Theme Color) */}
           <section>
             <div className="flex items-center gap-2 mb-4 text-gray-500">
@@ -72,11 +73,10 @@ export default function SettingsSidebar({ isOpen, onClose }: { isOpen: boolean, 
                 <button
                   key={f.id}
                   onClick={() => updateFont(f.id)}
-                  className={`py-2 text-xs rounded-xl border-2 transition-all ${
-                    fontFamily === f.id 
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10' 
+                  className={`py-2 text-xs rounded-xl border-2 transition-all ${fontFamily === f.id
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10'
                     : 'border-gray-100 dark:border-gray-800 hover:border-gray-200'
-                  }`}
+                    }`}
                 >
                   {f.name}
                 </button>
@@ -108,8 +108,19 @@ export default function SettingsSidebar({ isOpen, onClose }: { isOpen: boolean, 
 
         </div>
 
-        <div className="absolute bottom-8 left-6 right-6">
-           <p className="text-[10px] text-center opacity-40 uppercase font-bold tracking-[3px]">Space Link Personalization</p>
+        <div className="absolute bottom-8 left-6 right-6 space-y-4">
+          <Link
+            href="/settings"
+            onClick={onClose}
+            className="w-full flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all group"
+          >
+            <div className="flex items-center gap-3 font-bold text-sm">
+              <ShieldCheck size={20} className="text-emerald-500" />
+              <span>Settings & Privacy</span>
+            </div>
+            <ChevronRight size={18} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <p className="text-[10px] text-center opacity-40 uppercase font-bold tracking-[3px]">Space Link Personalization</p>
         </div>
 
       </div>

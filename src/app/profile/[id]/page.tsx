@@ -6,7 +6,7 @@ import FriendButton from '@/components/post/FriendButton'
 import EditProfileModal from './EditProfileModal'
 import OnlineFollowers from '@/components/post/OnlineFollowers'
 import AdSection from '@/components/AdSection'
-import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck } from 'lucide-react'
+import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck, Settings } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
@@ -113,9 +113,17 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     {/* Actions */}
                     <div className="flex gap-3 mb-6 shrink-0">
                         {isOwnProfile ? (
-                            <button className="text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:-translate-y-1 shadow-lg shadow-emerald-500/20" style={{ backgroundColor: vibeColor }}>
-                                <LayoutDashboard size={20} /> Dashboard
-                            </button>
+                            <div className="flex gap-3">
+                                <button className="text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:-translate-y-1 shadow-lg shadow-emerald-500/20" style={{ backgroundColor: vibeColor }}>
+                                    <LayoutDashboard size={20} /> Dashboard
+                                </button>
+                                <Link
+                                    href="/settings"
+                                    className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-6 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2"
+                                >
+                                    <Settings size={20} /> Settings & Privacy
+                                </Link>
+                            </div>
                         ) : (
                             <>
                                 <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} />

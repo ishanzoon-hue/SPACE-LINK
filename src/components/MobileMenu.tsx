@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Home, MessageSquare, User, TrendingUp, Trophy, Menu, X, Radio } from 'lucide-react'
+import { Home, MessageSquare, User, TrendingUp, Trophy, Menu, X, Radio, ShieldCheck } from 'lucide-react'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle'
 import ThemeToggle from './ThemeToggle'
@@ -110,6 +110,8 @@ export default function MobileMenu({ userId, notifications }: MobileMenuProps) {
                                 <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('common.settings')}</span>
                                 <SettingsToggle />
                             </div>
+
+                            <MobileNavItem href="/settings" icon={<ShieldCheck size={20} className="text-emerald-500" />} label="Settings & Privacy" onClick={() => setIsOpen(false)} />
 
                             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
                                 <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('common.theme')}</span>
