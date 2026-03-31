@@ -26,7 +26,11 @@ export default function OnlineFollowers({ currentUserId }: { currentUserId: stri
             .on('presence', { event: 'sync' }, () => {
                 const newState = channel.presenceState()
                 const users = Object.values(newState).flat()
-                setOnlineUsers(users)
+
+                // 🚀 Duplicate Keys Fix: 
+                // එකම යූසර්ට tabs කීපයක් තිබ්බොත් duplication එක නැති කරන්න unique list එකක් ගන්නවා
+                const uniqueUsers = Array.from(new Map(users.map((u: any) => [u.id, u])).values())
+                setOnlineUsers(uniqueUsers)
             })
             .subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
@@ -49,14 +53,14 @@ export default function OnlineFollowers({ currentUserId }: { currentUserId: stri
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 Online Friends ({onlineUsers.length})
             </h3>
-            
+
             <div className="space-y-3">
                 {onlineUsers.length === 0 ? (
                     <p className="text-xs text-gray-500">No one is online right now.</p>
                 ) : (
                     onlineUsers.map((user: any) => (
-                        <Link 
-                            key={user.id} 
+                        <Link
+                            key={user.id}
                             href={`/profile/${user.id}`} // ප්‍රොෆයිල් එකට යන ලින්ක් එක
                             className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all group"
                         >
