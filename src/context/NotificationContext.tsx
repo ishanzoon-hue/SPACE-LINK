@@ -13,9 +13,8 @@ interface Notification {
     is_read: boolean          // your DB uses is_read
     read?: boolean            // alias for convenience
     created_at: string
-    sender_id: string
-    receiver_id: string
-    user_id?: string          // your notifications page uses user_id
+    from_user_id: string
+    user_id: string          // your notifications page uses user_id
     post_id?: string
     from_user?: {
         id: string
@@ -61,8 +60,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             .from('notifications')
             .select(`
                 id, type, title, content, is_read, created_at,
-                sender_id, receiver_id, user_id, post_id,
-                from_user:profiles!sender_id(id, display_name, avatar_url, username),
+                from_user_id, user_id, post_id,
+                from_user:profiles!from_user_id(id, display_name, avatar_url, username),
                 post:posts!post_id(content)
             `)
             .eq('user_id', user.id)   // your DB uses user_id
@@ -100,8 +99,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         .from('notifications')
                         .select(`
                             id, type, title, content, is_read, created_at,
-                            sender_id, receiver_id, user_id, post_id,
-                            from_user:profiles!sender_id(id, display_name, avatar_url, username),
+                            from_user_id, user_id, post_id,
+                            from_user:profiles!from_user_id(id, display_name, avatar_url, username),
                             post:posts!post_id(content)
                         `)
                         .eq('id', payload.new.id)

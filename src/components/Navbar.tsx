@@ -29,8 +29,8 @@ export default function Navbar() {
                 // 1. Notifications
                 const { data: notifData } = await supabase
                     .from('notifications')
-                    .select(`*, from_user:profiles!sender_id(display_name, avatar_url), post:posts!post_id(content)`)
-                    .eq('receiver_id', authUser.id)
+                    .select(`*, from_user:profiles!from_user_id(display_name, avatar_url), post:posts!post_id(content)`)
+                    .eq('user_id', authUser.id)
                     .order('created_at', { ascending: false })
                     .limit(10)
                 if (notifData) setNotifications(notifData)
