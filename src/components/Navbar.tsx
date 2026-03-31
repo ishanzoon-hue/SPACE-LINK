@@ -16,7 +16,6 @@ import { useEffect, useState } from 'react'
 export default function Navbar() {
     const { t } = useTranslation()
     const [user, setUser] = useState<any>(null)
-    const [notifications, setNotifications] = useState<any[]>([])
     const [lmoBalance, setLmoBalance] = useState(0)
     const supabase = createClient()
 
@@ -26,16 +25,7 @@ export default function Navbar() {
             setUser(authUser)
 
             if (authUser) {
-                // 1. Notifications
-                const { data: notifData } = await supabase
-                    .from('notifications')
-                    .select(`*, from_user:profiles!from_user_id(display_name, avatar_url), post:posts!post_id(content)`)
-                    .eq('user_id', authUser.id)
-                    .order('created_at', { ascending: false })
-                    .limit(10)
-                if (notifData) setNotifications(notifData)
-
-                // 2. LMO Balance
+                // 1. LMO Balance
                 const { data: profileData } = await supabase
                     .from('profiles')
                     .select('lmo_balance')
@@ -104,7 +94,7 @@ export default function Navbar() {
                                     <NavIcon href={`/profile/${user.id}`} icon={<User size={20} />} tooltip={t('common.profile')} />
 
                                     <div className="relative group">
-                                        <NotificationBell notifications={notifications} />
+                                        <NotificationBell />
                                         <span className={tooltipStyle}>{t('common.notifications')}</span>
                                     </div>
 
@@ -130,7 +120,7 @@ export default function Navbar() {
                                 </div>
 
                                 {/* Mobile Menu Button */}
-                                <MobileMenu userId={user.id} notifications={notifications} />
+                                <MobileMenu userId={user.id} />
                             </>
                         ) : (
                             <div className="flex items-center gap-2 sm:gap-3 shrink-0">

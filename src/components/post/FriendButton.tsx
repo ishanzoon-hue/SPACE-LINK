@@ -9,7 +9,7 @@ export default function FriendButton({ targetUserId, currentUserId }: { targetUs
     const [status, setStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'friends'>('none')
     const [loading, setLoading] = useState(true)
     const [requestId, setRequestId] = useState<string | null>(null)
-    
+
     const supabase = createClient()
 
     useEffect(() => {
@@ -52,14 +52,12 @@ export default function FriendButton({ targetUserId, currentUserId }: { targetUs
                     .insert([{ sender_id: currentUserId, receiver_id: targetUserId, status: 'pending' }])
                     .select()
                     .single()
-                
+
                 if (error) throw error
 
                 // 🔔 Notification එකක් යවනවා
                 await supabase.from('notifications').insert([{
                     user_id: targetUserId,
-                    receiver_id: targetUserId,
-                    sender_id: currentUserId,
                     from_user_id: currentUserId,
                     type: 'friend_request'
                 }])
@@ -67,7 +65,7 @@ export default function FriendButton({ targetUserId, currentUserId }: { targetUs
                 setStatus('pending_sent')
                 setRequestId(data.id)
                 toast.success('Friend Request Sent! 🚀')
-            } 
+            }
             else if (status === 'pending_sent' || status === 'friends') {
                 // 🗑️ අයින් කරන්න (Cancel or Unfriend)
                 if (requestId) {
@@ -83,12 +81,10 @@ export default function FriendButton({ targetUserId, currentUserId }: { targetUs
                 if (requestId) {
                     const { error } = await supabase.from('friend_requests').update({ status: 'accepted' }).eq('id', requestId)
                     if (error) throw error
-                    
+
                     // 🔔 Notification එකක් යවනවා (Accepted කියලා)
                     await supabase.from('notifications').insert([{
                         user_id: targetUserId,
-                        receiver_id: targetUserId,
-                        sender_id: currentUserId,
                         from_user_id: currentUserId,
                         type: 'friend_accept'
                     }])
@@ -108,15 +104,14 @@ export default function FriendButton({ targetUserId, currentUserId }: { targetUs
     if (!currentUserId || currentUserId === targetUserId) return null
 
     return (
-        <button 
+        <button
             onClick={handleClick}
             disabled={loading}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${
-                status === 'none' ? 'bg-emerald-500 hover:bg-emerald-600 text-white' :
-                status === 'pending_sent' ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' :
-                status === 'pending_received' ? 'bg-blue-500 hover:bg-blue-600 text-white' :
-                'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white'
-            }`}
+            className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${status === 'none' ? 'bg-emerald-500 hover:bg-emerald-600 text-white' :
+                    status === 'pending_sent' ? 'bg-gray-800 hover:bg-gray-700 text-gray-300' :
+                        status === 'pending_received' ? 'bg-blue-500 hover:bg-blue-600 text-white' :
+                            'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white'
+                }`}
         >
             {loading ? <span className="animate-pulse italic">Processing...</span> : (
                 <>

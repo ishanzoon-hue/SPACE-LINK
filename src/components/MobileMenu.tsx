@@ -12,10 +12,9 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 interface MobileMenuProps {
     userId: string
-    notifications: any[]
 }
 
-export default function MobileMenu({ userId, notifications }: MobileMenuProps) {
+export default function MobileMenu({ userId }: MobileMenuProps) {
     const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
 
@@ -98,7 +97,7 @@ export default function MobileMenu({ userId, notifications }: MobileMenuProps) {
 
                             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
                                 <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{t('common.notifications')}</span>
-                                <NotificationBell notifications={notifications} />
+                                <NotificationBell />
                             </div>
 
                             <div className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">

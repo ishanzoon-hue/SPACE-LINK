@@ -61,7 +61,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             .select(`
                 id, type, title, content, is_read, created_at,
                 from_user_id, user_id, post_id,
-                from_user:profiles!from_user_id(id, display_name, avatar_url),
+                from_user:profiles!fk_sender(id, display_name, avatar_url),
                 post:posts!post_id(content)
             `)
             .eq('user_id', user.id)   // your DB uses user_id
@@ -100,7 +100,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
                         .select(`
                             id, type, title, content, is_read, created_at,
                             from_user_id, user_id, post_id,
-                            from_user:profiles!from_user_id(id, display_name, avatar_url),
+                            from_user:profiles!fk_sender(id, display_name, avatar_url),
                             post:posts!post_id(content)
                         `)
                         .eq('id', payload.new.id)
@@ -164,13 +164,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     // Mark all as read
     const markAllAsRead = async () => {
-        const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id)
-        if (unreadIds.length === 0) return
+        if (!user) return
 
         const { error } = await supabase
             .from('notifications')
             .update({ is_read: true })
-            .in('id', unreadIds)
+            .eq('user_id', user.id)
+            .eq('is_read', false)
 
         if (!error) {
             setNotifications(prev =>
@@ -178,6 +178,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
             )
         }
     }
+
 
     // Delete notification
     const deleteNotification = async (id: string) => {

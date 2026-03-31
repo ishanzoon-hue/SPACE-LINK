@@ -1,38 +1,17 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import { Heart, MessageCircle, UserPlus, UserCheck, Bell, CheckCheck, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useNotifications } from '@/context/NotificationContext'
 
-interface Notification {
-    id: string
-    type: string
-    is_read: boolean
-    from_user: { display_name: string, avatar_url?: string }
-    post?: { content: string }
-    post_id?: string
-    sender_id?: string
-    from_user_id?: string
-    created_at: string
-}
-
-interface NotificationBellProps {
-    notifications: Notification[]
-}
-
-export default function NotificationBell({ notifications: initialNotifications }: NotificationBellProps) {
+export default function NotificationBell() {
     const { t } = useTranslation()
+    const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications()
     const [isOpen, setIsOpen] = useState(false)
-    const [notifications, setNotifications] = useState(initialNotifications)
     const dropdownRef = useRef<HTMLDivElement>(null)
-    const supabase = createClient()
-
-    useEffect(() => {
-        setNotifications(initialNotifications)
-    }, [initialNotifications])
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -43,25 +22,6 @@ export default function NotificationBell({ notifications: initialNotifications }
         document.addEventListener("mousedown", handleClickOutside)
         return () => document.removeEventListener("mousedown", handleClickOutside)
     }, [])
-
-    const unreadCount = notifications.filter(n => !n.is_read).length
-
-    const handleMarkAllRead = async () => {
-        const { error } = await supabase
-            .from('notifications')
-            .update({ is_read: true })
-            .eq('is_read', false)
-
-        if (!error) {
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-        }
-    }
-
-    const markAsRead = async (id: string, currentlyUnread: boolean) => {
-        if (!currentlyUnread) return;
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
-        await supabase.from('notifications').update({ is_read: true }).eq('id', id)
-    }
 
     const getNotificationIcon = (type: string) => {
         switch (type) {
@@ -75,7 +35,7 @@ export default function NotificationBell({ notifications: initialNotifications }
         }
     }
 
-    const getNotificationText = (notification: Notification) => {
+    const getNotificationText = (notification: any) => {
         switch (notification.type) {
             case 'like': return t('notifications.liked')
             case 'comment': return t('notifications.commented')
@@ -87,21 +47,17 @@ export default function NotificationBell({ notifications: initialNotifications }
         }
     }
 
-    const getNotificationLink = (notification: Notification) => {
-        const senderId = notification.from_user_id || notification.sender_id
+    const getNotificationLink = (notification: any) => {
+        const senderId = notification.from_user_id
 
-        // Post-related → go to the post
         if (['like', 'comment', 'mention'].includes(notification.type) && notification.post_id)
             return `/post/${notification.post_id}`
 
-        // Profile-related → go to sender's profile
         if (['follow', 'accept_request'].includes(notification.type) && senderId)
             return `/profile/${senderId}`
 
-        // Message → go to messages page
         if (notification.type === 'message') return '/messages'
 
-        // Fallback: if there's a post, go there; otherwise sender's profile
         if (notification.post_id) return `/post/${notification.post_id}`
         if (senderId) return `/profile/${senderId}`
         return '#'
@@ -131,7 +87,7 @@ export default function NotificationBell({ notifications: initialNotifications }
                         <div className="flex gap-2">
                             {unreadCount > 0 && (
                                 <button
-                                    onClick={handleMarkAllRead}
+                                    onClick={markAllAsRead}
                                     title="Mark all as read"
                                     className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                                 >
@@ -149,7 +105,7 @@ export default function NotificationBell({ notifications: initialNotifications }
                             </div>
                         ) : (
                             <div className="flex flex-col">
-                                {notifications.map(notification => {
+                                {notifications.slice(0, 10).map(notification => {
                                     const { Icon, color, bg } = getNotificationIcon(notification.type)
                                     const isUnread = !notification.is_read
                                     const displayName = notification.from_user?.display_name || 'Someone'
@@ -159,7 +115,7 @@ export default function NotificationBell({ notifications: initialNotifications }
                                             key={notification.id}
                                             href={getNotificationLink(notification)}
                                             onClick={() => {
-                                                markAsRead(notification.id, isUnread)
+                                                if (isUnread) markAsRead(notification.id)
                                                 setIsOpen(false)
                                             }}
                                             className={`flex items-start gap-3 p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-50 dark:border-gray-800/50 last:border-0 ${isUnread ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
@@ -215,4 +171,4 @@ export default function NotificationBell({ notifications: initialNotifications }
             )}
         </div>
     )
-}
+}

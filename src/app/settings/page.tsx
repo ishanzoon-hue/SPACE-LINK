@@ -11,15 +11,19 @@ import {
     Palette,
     Globe,
     ChevronRight,
-    ShieldCheck,
     LogOut,
     ArrowLeft,
     Check,
-    Loader2
+    Loader2,
+    ShieldAlert,
+    ShieldCheck,
+    Trash2,
+    Terminal
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useSettings } from '@/context/SettingsContext'
+import { SecurityCard } from '@/components/settings/SecurityCard'
 
 export default function SettingsPage() {
     const { t } = useTranslation()
@@ -30,6 +34,10 @@ export default function SettingsPage() {
     const [profile, setProfile] = useState<any>(null)
     const supabase = createClient()
     const router = useRouter()
+    
+    // NEW: Password update state
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
 
     useEffect(() => {
         async function loadUser() {
@@ -63,6 +71,43 @@ export default function SettingsPage() {
             toast.error('Failed to update settings')
         }
         setLoading(false)
+    }
+
+    const handleUpdatePassword = async () => {
+        if (!newPassword || !confirmPassword) {
+            toast.error('Please fill in both password fields')
+            return
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast.error('Passwords do not match')
+            return
+        }
+
+        if (newPassword.length < 6) {
+            toast.error('Password must be at least 6 characters')
+            return
+        }
+
+        setLoading(true)
+        const { error } = await supabase.auth.updateUser({ password: newPassword })
+
+        if (!error) {
+            toast.success('Password updated successfully! 🔐')
+            setNewPassword('')
+            setConfirmPassword('')
+        } else {
+            toast.error(error.message || 'Failed to update password')
+        }
+        setLoading(false)
+    }
+
+    const handleAccountDeletion = async () => {
+        // This is a UI mockup for now, as Supabase requires management API for full deletion usually.
+        toast.error('Please contact support to delete your account permanently.', {
+            icon: '🛡️',
+            duration: 5000
+        })
     }
 
     if (!profile) return (
@@ -263,11 +308,123 @@ export default function SettingsPage() {
                         </div>
                     )}
 
-                    {/* PLACEHOLDERS */}
-                    {(activeSection === 'security' || activeSection === 'notifications') && (
+                    {/* SECTION: SECURITY */}
+                    {activeSection === 'security' && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <h2 className="text-2xl font-black underline decoration-emerald-500 decoration-4 underline-offset-8">Security & Access</h2>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Password Management */}
+                                <SecurityCard 
+                                    icon={Lock} 
+                                    title="Update Password" 
+                                    desc="Keep your account safe with a strong password"
+                                >
+                                    <div className="space-y-4 pt-2">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-gray-400 tracking-wider">New Password</label>
+                                            <input 
+                                                type="password" 
+                                                value={newPassword}
+                                                onChange={(e) => setNewPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-3 rounded-2xl outline-none focus:border-emerald-500/50 transition-all text-sm"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Confirm Password</label>
+                                            <input 
+                                                type="password" 
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                className="w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-3 rounded-2xl outline-none focus:border-emerald-500/50 transition-all text-sm"
+                                            />
+                                        </div>
+                                        <button 
+                                            onClick={handleUpdatePassword}
+                                            disabled={loading}
+                                            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold py-3 rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]"
+                                        >
+                                            {loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : 'Update Password'}
+                                        </button>
+                                    </div>
+                                </SecurityCard>
+
+                                {/* Account Protection */}
+                                <div className="space-y-4">
+                                    <SecurityCard 
+                                        icon={ShieldCheck} 
+                                        title="Two-Factor Auth" 
+                                        desc="Add an extra layer of protection"
+                                    >
+                                        <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-50 dark:border-gray-800">
+                                            <span className="text-xs font-bold text-gray-500">Status: Disabled</span>
+                                            <button className="text-xs font-black text-emerald-500 hover:underline">Enable</button>
+                                        </div>
+                                    </SecurityCard>
+
+                                    <SecurityCard 
+                                        icon={ShieldAlert} 
+                                        title="Login Alerts" 
+                                        desc="Get notified of new logins"
+                                    >
+                                        <div className="flex justify-between items-center px-1">
+                                            <span className="text-xs font-medium text-gray-400">Email Notifications</span>
+                                            <div className="w-10 h-5 bg-emerald-500 rounded-full relative">
+                                                <div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full" />
+                                            </div>
+                                        </div>
+                                    </SecurityCard>
+                                </div>
+
+                                {/* Active Sessions */}
+                                <SecurityCard 
+                                    icon={Terminal} 
+                                    title="Current Session" 
+                                    desc="Device information for this login"
+                                >
+                                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-50 dark:border-gray-800 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-gray-500">Operating System</span>
+                                            <span className="text-xs font-black text-gray-900 dark:text-white uppercase">Windows</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-gray-500">Status</span>
+                                            <span className="text-xs font-black text-emerald-500">Active Now</span>
+                                        </div>
+                                    </div>
+                                </SecurityCard>
+
+                                {/* Danger Zone */}
+                                <SecurityCard 
+                                    icon={Trash2} 
+                                    variant="danger"
+                                    title="Danger Zone" 
+                                    desc="Irreversible actions for your account"
+                                >
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed mb-1">
+                                        Deactivating your account will hide your profile from all other users on the platform. This is irreversible after 30 days.
+                                    </p>
+                                    <button 
+                                        onClick={handleAccountDeletion}
+                                        className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-3 rounded-2xl shadow-lg shadow-red-500/20 transition-all active:scale-[0.98] text-sm uppercase tracking-wider"
+                                    >
+                                        Delete Forever
+                                    </button>
+                                </SecurityCard>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SECTION: NOTIFICATIONS */}
+                    {activeSection === 'notifications' && (
                         <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
                             <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center">
-                                <activeSection.icon size={40} className="text-gray-300" />
+                                {(() => {
+                                    const Icon = sections.find(s => s.id === activeSection)?.icon || Bell;
+                                    return <Icon size={40} className="text-gray-300" />;
+                                })()}
                             </div>
                             <h3 className="text-xl font-bold">Coming Soon!</h3>
                             <p className="text-gray-500 max-w-xs mx-auto">We are working hard to bring advanced {activeSection} settings to Elimeno.</p>

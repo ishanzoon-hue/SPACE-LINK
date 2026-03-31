@@ -5,20 +5,21 @@ import Link from 'next/link'
 import { Heart, MessageCircle, UserPlus, UserCheck, Bell, CheckCheck, Trash2 } from 'lucide-react'
 import { useNotifications } from '@/context/NotificationContext'
 import { formatDistanceToNow } from 'date-fns'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function NotificationsPage() {
+    const { t } = useTranslation()
     const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, isLoading } = useNotifications()
     const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all')
 
     // Filter notifications
     const filteredNotifications = activeFilter === 'all'
         ? notifications
-        : notifications.filter(n => !n.read)
+        : notifications.filter(n => !n.is_read)
 
     // Mark all as read when page loads (optional)
     useEffect(() => {
         if (unreadCount > 0) {
-            // Auto mark as read when viewing page? Up to you
             // markAllAsRead()
         }
     }, [])
@@ -43,41 +44,28 @@ export default function NotificationsPage() {
     }
 
     const getNotificationText = (notification: any) => {
-        const displayName = notification.from_user?.display_name || 'Someone'
-
         switch (notification.type) {
-            case 'like':
-                return `${displayName} liked your post`
-            case 'comment':
-                return `${displayName} commented on your post`
-            case 'follow':
-                return `${displayName} started following you`
-            case 'accept_request':
-                return `${displayName} accepted your friend request`
-            case 'mention':
-                return `${displayName} mentioned you in a post`
-            case 'message':
-                return `${displayName} sent you a message`
-            default:
-                return notification.title || `${displayName} interacted with you`
+            case 'like': return t('notifications.liked')
+            case 'comment': return t('notifications.commented')
+            case 'follow': return t('notifications.followed')
+            case 'accept_request': return t('notifications.accepted')
+            case 'mention': return t('notifications.mentioned')
+            case 'message': return t('notifications.messaged')
+            default: return t('notifications.interacted')
         }
     }
 
     const getNotificationLink = (notification: any) => {
-        const senderId = notification.from_user_id || notification.sender_id
+        const senderId = notification.from_user_id
 
-        // Post-related → go to the post
         if (['like', 'comment', 'mention'].includes(notification.type) && notification.post_id)
             return `/post/${notification.post_id}`
 
-        // Profile-related → go to sender's profile
         if (['follow', 'accept_request'].includes(notification.type) && senderId)
             return `/profile/${senderId}`
 
-        // Message → go to messages page
         if (notification.type === 'message') return '/messages'
 
-        // Fallback: if there's a post, go there; otherwise sender's profile
         if (notification.post_id) return `/post/${notification.post_id}`
         if (senderId) return `/profile/${senderId}`
         return '#'
@@ -94,7 +82,7 @@ export default function NotificationsPage() {
                                 <Bell size={24} className="text-emerald-500" />
                             </div>
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                Notifications
+                                {t('notifications.title')}
                             </h1>
                             {unreadCount > 0 && (
                                 <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs font-bold rounded-full">
@@ -120,8 +108,8 @@ export default function NotificationsPage() {
                         <button
                             onClick={() => setActiveFilter('all')}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeFilter === 'all'
-                                    ? 'bg-emerald-500 text-white shadow-md'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                ? 'bg-emerald-500 text-white shadow-md'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                                 }`}
                         >
                             All
@@ -129,8 +117,8 @@ export default function NotificationsPage() {
                         <button
                             onClick={() => setActiveFilter('unread')}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeFilter === 'unread'
-                                    ? 'bg-emerald-500 text-white shadow-md'
-                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                ? 'bg-emerald-500 text-white shadow-md'
+                                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                                 }`}
                         >
                             Unread
@@ -165,7 +153,7 @@ export default function NotificationsPage() {
                     // Empty state
                     <div className="text-center py-20 bg-white dark:bg-gray-900/50 rounded-3xl border border-gray-200 dark:border-gray-800">
                         <Bell size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-4 opacity-50" />
-                        <h2 className="text-xl font-bold text-gray-600 dark:text-gray-400">No notifications</h2>
+                        <h2 className="text-xl font-bold text-gray-600 dark:text-gray-400">{t('notifications.none')}</h2>
                         <p className="text-gray-500 dark:text-gray-500 mt-2">
                             {activeFilter === 'unread'
                                 ? "You've read all your notifications! 🎉"
@@ -177,14 +165,14 @@ export default function NotificationsPage() {
                     <div className="space-y-2">
                         {filteredNotifications.map((notification) => {
                             const { Icon, color, bg } = getNotificationIcon(notification.type)
-                            const isUnread = !notification.read
+                            const isUnread = !notification.is_read
 
                             return (
                                 <div
                                     key={notification.id}
                                     className={`group relative rounded-2xl transition-all ${isUnread
-                                            ? 'bg-gradient-to-r from-emerald-50/50 to-transparent dark:from-emerald-900/20 dark:to-transparent'
-                                            : ''
+                                        ? 'bg-gradient-to-r from-emerald-50/50 to-transparent dark:from-emerald-900/20 dark:to-transparent'
+                                        : ''
                                         }`}
                                 >
                                     <Link
@@ -263,4 +251,4 @@ export default function NotificationsPage() {
             </div>
         </div>
     )
-}
+}
