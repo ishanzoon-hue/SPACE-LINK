@@ -15,7 +15,6 @@ export default function IncomingCall() {
 
   useEffect(() => {
     // 1. පේජ් එක ලෝඩ් වෙද්දීම රින්ග්ටෝන් ෆයිල් එක ලෝඩ් කරගන්නවා
-    // මතක ඇතුව ringtone.mp3 එක public/sounds/ ෆෝල්ඩර් එකේ තියෙන්න ඕනේ
     audioRef.current = new Audio('/sounds/ringtone.mp3')
     audioRef.current.loop = true // කෝල් එක ගන්නකම් දිගටම ප්ලේ වෙන්න
 

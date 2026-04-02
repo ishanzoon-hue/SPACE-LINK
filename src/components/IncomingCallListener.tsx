@@ -91,45 +91,19 @@ export default function IncomingCallListener() {
         }
     }, [currentUserId])
 
+    const audioRef = useRef<HTMLAudioElement | null>(null)
+
     const startRingtone = () => {
         try {
-            const audioCtx = getOrCreateAudioCtx()
-
-            const playRing = () => {
-                try {
-                    if (audioCtx.state === 'suspended') audioCtx.resume()
-
-                    const osc1 = audioCtx.createOscillator()
-                    const osc2 = audioCtx.createOscillator()
-                    const gainNode = audioCtx.createGain()
-
-                    osc1.connect(gainNode)
-                    osc2.connect(gainNode)
-                    gainNode.connect(audioCtx.destination)
-
-                    osc1.frequency.value = 440
-                    osc2.frequency.value = 480
-                    osc1.type = 'sine'
-                    osc2.type = 'sine'
-
-                    const now = audioCtx.currentTime
-                    gainNode.gain.setValueAtTime(0, now)
-                    gainNode.gain.linearRampToValueAtTime(0.2, now + 0.05)
-                    gainNode.gain.setValueAtTime(0.2, now + 0.4)
-                    gainNode.gain.linearRampToValueAtTime(0, now + 0.45)
-                    gainNode.gain.linearRampToValueAtTime(0.2, now + 0.6)
-                    gainNode.gain.setValueAtTime(0.2, now + 1.0)
-                    gainNode.gain.linearRampToValueAtTime(0, now + 1.05)
-
-                    osc1.start(now)
-                    osc2.start(now)
-                    osc1.stop(now + 1.1)
-                    osc2.stop(now + 1.1)
-                } catch (e) { }
+            if (!audioRef.current) {
+                audioRef.current = new Audio('/sounds/ringtone.mp3')
+                audioRef.current.loop = true
             }
-
-            playRing()
-            ringIntervalRef.current = setInterval(playRing, 3000)
+            
+            // Resume if suspended (some browsers)
+            audioRef.current.play().catch(e => {
+                console.log("Autoplay blocked, waiting for user interaction", e)
+            })
 
             // Auto-dismiss after 30 seconds
             timeoutRef.current = setTimeout(() => {
@@ -137,7 +111,7 @@ export default function IncomingCallListener() {
             }, 30000)
 
         } catch (e) {
-            // Audio not available, just show visual
+            console.error("Audio error:", e)
         }
     }
 
@@ -174,6 +148,10 @@ export default function IncomingCallListener() {
         try {
             if (ringIntervalRef.current) clearInterval(ringIntervalRef.current)
             if (timeoutRef.current) clearTimeout(timeoutRef.current)
+            if (audioRef.current) {
+                audioRef.current.pause()
+                audioRef.current.currentTime = 0
+            }
             ringIntervalRef.current = null
             timeoutRef.current = null
         } catch (e) { }
