@@ -6,6 +6,7 @@ import Link from 'next/link'
 import StatCard from '@/components/dashboard/StatCard'
 import WalletWidget from '@/components/dashboard/WalletWidget'
 import PromotionalBanner from '@/components/dashboard/PromotionalBanner'
+import RewardBanner from '@/components/RewardBanner';
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -42,12 +43,18 @@ export default async function DashboardPage() {
                         </p>
                     </div>
                 </div>
+                
                 <div className="flex gap-4">
                     <div className="bg-[#0F172A] px-6 py-3 rounded-2xl border border-gray-800 flex items-center gap-3">
                         <Award className="text-yellow-500" size={20} />
                         <span className="text-white font-black italic">{profile?.is_verified ? 'Verified Citizen' : 'Space Explorer'}</span>
                     </div>
                 </div>
+            </div>
+
+            {/* 🎁 🚀 Reward Banner Section - Header එකට යටින් දාමු (පෙනුම සුපිරි වෙන්න) */}
+            <div className="mb-12">
+                <RewardBanner />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -89,7 +96,7 @@ export default async function DashboardPage() {
                             refCode={profile?.id.split('-')[0].toUpperCase() || 'ERRO'} 
                         />
 
-                        {/* Recent Performance/Activity Concept */}
+                        {/* Recent Performance/Activity */}
                         <div className="bg-[#0F172A] p-8 rounded-[40px] border border-gray-800 flex flex-col justify-between">
                             <div>
                                 <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-6">Network Health</h3>
@@ -118,7 +125,6 @@ export default async function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Friend Requests moved here for better flow */}
                     <FriendRequestCard /> 
                 </div>
 
@@ -139,11 +145,10 @@ export default async function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Quick Info Card */}
                     <div className="bg-gradient-to-br from-blue-600 to-indigo-800 p-8 rounded-[40px] text-white shadow-xl relative overflow-hidden">
                         <div className="relative z-10">
                             <h3 className="text-2xl font-black italic mb-2 uppercase">Pro Explorer</h3>
-                            <p className="text-white/70 text-sm mb-6 leading-relaxed">Upgrade to unlock advanced analytics and personalized themes for your profile.</p>
+                            <p className="text-white/70 text-sm mb-6 leading-relaxed">Upgrade to unlock advanced analytics and personalized themes.</p>
                             <button className="w-full bg-white text-blue-600 font-bold py-3 rounded-2xl hover:scale-105 active:scale-95 transition-all">
                                 Coming Soon
                             </button>

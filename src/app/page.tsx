@@ -5,6 +5,7 @@ import FollowingChart from '@/components/FollowingChart'
 import ReferralCard from '@/components/ReferralCard'
 import AdvertisementWidget from '@/components/AdvertisementWidget'
 import HomeHero from '@/components/HomeHero'
+import RewardBanner from '@/components/RewardBanner' // 🚀 1. මෙන්න Import එක ඇඩ් කරා
 
 export default async function Home() {
   const supabase = await createClient()
@@ -22,7 +23,14 @@ export default async function Home() {
       {/* ⬅️ MAIN COLUMN */}
       <div className="flex-1 space-y-6">
 
-        {/* LMO Intro & Wallet Banner (Client Side for Translation) */}
+        {/* 🚀 2. යූසර් ලොග් වෙලා ඉන්නවා නම් විතරක් Reward Banner එක පෙන්වනවා */}
+        {user && (
+          <div className="mb-2">
+            <RewardBanner />
+          </div>
+        )}
+
+        {/* LMO Intro & Wallet Banner */}
         <HomeHero />
 
         {/* 📈 Following Chart - Only show for logged-in users */}
@@ -32,7 +40,7 @@ export default async function Home() {
         <Feed />
       </div>
 
-      {/* ➡️ RIGHT SIDEBAR (දකුණු පැත්තේ කොටස - Desktop විතරයි) */}
+      {/* ➡️ RIGHT SIDEBAR */}
       {user && (
         <div className="hidden lg:flex flex-col gap-6 w-80 shrink-0 sticky top-24 h-fit">
           <AdvertisementWidget isAdmin={isAdmin} />
