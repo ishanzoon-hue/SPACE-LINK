@@ -9,6 +9,7 @@ import AdSection from '@/components/AdSection'
 import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck, Settings, Smartphone, Instagram, Twitter, Linkedin, Map } from 'lucide-react'
 import Link from 'next/link'
 import VoiceCall from '@/components/VoiceCall'
+import VideoCall from '@/components/VideoCall'
 
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
     const { id } = await params
@@ -135,6 +136,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                                 
                                 {/* 🚀 Voice Call Button එක මෙතනට දැම්මා */}
                                 {currentUser && <VoiceCall callerId={currentUser.id} receiverId={id} />}
+                                <VideoCall callerId={currentUser.id} receiverId={id} />
                             </div>
                         )}
                     </div>
