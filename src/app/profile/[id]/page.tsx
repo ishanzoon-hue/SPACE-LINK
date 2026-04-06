@@ -8,6 +8,7 @@ import OnlineFollowers from '@/components/post/OnlineFollowers'
 import AdSection from '@/components/AdSection'
 import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck, Settings, Smartphone, Instagram, Twitter, Linkedin, Map } from 'lucide-react'
 import Link from 'next/link'
+import VoiceCall from '@/components/VoiceCall'
 
 export default async function ProfilePage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ tab?: string }> }) {
     const { id } = await params
@@ -17,7 +18,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
 
-    // 🚀 1. ප්‍රොෆයිල් දත්ත ලබා ගැනීම (is_verified එකතු කළා)
+    // 🚀 1. ප්‍රොෆයිල් දත්ත ලබා ගැනීම
     const { data: profile, error } = await supabase
         .from('profiles')
         .select(`*, followers:follows!followed_id(count), following:follows!follower_id(count), is_verified`)
@@ -90,11 +91,9 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
 
                     {/* Name & Title */}
                     <div className="flex-1 text-center md:text-left pb-4 md:pb-6">
-                        {/* 🚀 නම සහ Verified Badge එක */}
                         <h1 className="text-4xl md:text-5xl font-extrabold mb-1 tracking-tight text-gray-900 dark:text-white flex items-center justify-center md:justify-start gap-3">
                             {profile.display_name}
 
-                            {/* යූසර් Verified නම් විතරක් මේ ලොකු Tick එක පෙන්වනවා */}
                             {profile.is_verified && (
                                 <BadgeCheck
                                     size={36}
@@ -102,7 +101,6 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                                 />
                             )}
 
-                            {/* පොඩි Sparkle එකත් අයින් කරේ නෑ, ඒකත් ලස්සනයි */}
                             {!profile.is_verified && <Sparkles className="w-6 h-6" style={{ color: vibeColor }} />}
                         </h1>
                         <p className="text-gray-500 dark:text-gray-400 font-medium text-lg mt-2">
@@ -129,12 +127,15 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                                 </Link>
                             </div>
                         ) : (
-                            <>
+                            <div className="flex items-center gap-3">
                                 <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} />
                                 <Link href={`/chat/${id}`} className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-6 py-3 rounded-xl font-bold transition-all shadow-sm">
                                     Message
                                 </Link>
-                            </>
+                                
+                                {/* 🚀 Voice Call Button එක මෙතනට දැම්මා */}
+                                {currentUser && <VoiceCall callerId={currentUser.id} receiverId={id} />}
+                            </div>
                         )}
                     </div>
                 </div>
