@@ -9,7 +9,7 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
     const [isReceivingCall, setIsReceivingCall] = useState(false)
     const [isMuted, setIsMuted] = useState(false)
     const [isVideoOff, setIsVideoOff] = useState(false)
-    const [callActive, setCallActive] = useState(false) // කෝල් එක ආන්සර් කරාද කියලා බලන්න
+    const [callActive, setCallActive] = useState(false)
     
     const localVideoRef = useRef<HTMLVideoElement>(null)
     const remoteVideoRef = useRef<HTMLVideoElement>(null)
@@ -20,7 +20,6 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
     const localStream = useRef<MediaStream | null>(null)
     
     const supabase = createClient()
-    // Voice call එකටයි මේකටයි පැටලෙන්නේ නැති වෙන්න නම වෙනස් කරා
     const roomName = `video_call_${[callerId, receiverId].sort().join('_')}` 
     const channel = useRef(supabase.channel(roomName))
 
@@ -43,7 +42,7 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
                     if (dialtoneRef.current) dialtoneRef.current.pause()
                     if (peerConnection.current) {
                         await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer))
-                        setCallActive(true) // කෝල් එක කනෙක්ට් වුණා
+                        setCallActive(true)
                     }
                 }
 
@@ -66,6 +65,7 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
         })
+        
         pc.onicecandidate = (event) => {
             if (event.candidate) {
                 channel.current.send({
@@ -75,22 +75,36 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
                 })
             }
         }
+        
+        // 🚀 වෙනස මෙතනයි: Remote Video එක ආවම හරියටම ප්ලේ වෙන්න හදලා තියෙන්නේ
         pc.ontrack = (event) => {
-            if (remoteVideoRef.current) {
+            if (remoteVideoRef.current && event.streams && event.streams[0]) {
                 remoteVideoRef.current.srcObject = event.streams[0]
+                // සමහර බ්‍රව්සර් වලට play() එක explicitly කෝල් කරන්න ඕනේ
+                remoteVideoRef.current.play().catch(e => console.error("Error playing remote video:", e))
             }
         }
+        
         return pc
     }
 
-    // මයික් එක සහ කැමරාව දෙකම ඔන් කරනවා
     const setupMedia = async (pc: RTCPeerConnection) => {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
-        localStream.current = stream
-        if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream
+        try {
+            // 🚀 කැමරාව සහ මයික් එක ඉල්ලනවා
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+            localStream.current = stream
+            
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = stream
+                // අපේ කැමරාවත් හරියටම ප්ලේ වෙන්න
+                localVideoRef.current.play().catch(e => console.error("Error playing local video:", e))
+            }
+            
+            stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+        } catch (error) {
+            console.error("Error accessing camera/mic:", error)
+            alert("කැමරාවට හෝ මයික් එකට permission දෙන්න!")
         }
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream))
     }
 
     const startCall = async () => {
@@ -149,6 +163,11 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
             localStream.current.getTracks().forEach(track => track.stop())
             localStream.current = null
         }
+        
+        // 🚀 වීඩියෝ ටැග් වල තියෙන stream එක අයින් කරනවා
+        if (localVideoRef.current) localVideoRef.current.srcObject = null
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
+
         setIsCalling(false)
         setIsReceivingCall(false)
         setCallActive(false)
@@ -181,7 +200,6 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
             <audio ref={ringtoneRef} src="/ringtone.mp3" loop className="hidden" />
             <audio ref={dialtoneRef} src="/dialtone.mp3" loop className="hidden" />
 
-            {/* Profile එකේ පේන පොඩි Video බටන් එක */}
             {!isCalling && !isReceivingCall && (
                 <button 
                     onClick={startCall}
@@ -201,11 +219,10 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
                 </button>
             )}
 
-            {/* Video Call එක ගද්දී මුළු ස්ක්‍රීන් එකම වැහෙන UI එක */}
             {isCalling && (
-                <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center backdrop-blur-md">
+                <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
                     
-                    {/* අනිත් කෙනාගේ වීඩියෝ එක (ලොකුවට) */}
+                    {/* අනිත් කෙනාගේ වීඩියෝ එක */}
                     <video 
                         ref={remoteVideoRef} 
                         autoPlay 
@@ -213,18 +230,18 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
                         className="w-full h-full object-cover"
                     />
 
-                    {/* අපේ වීඩියෝ එක (පොඩියට දකුණු පැත්තේ යටින්) */}
+                    {/* අපේ වීඩියෝ එක (කැඩපතක් වගේ පේන්න transform: scaleX(-1) දාලා තියෙනවා) */}
                     <video 
                         ref={localVideoRef} 
                         autoPlay 
                         muted 
                         playsInline 
                         className={`absolute bottom-28 right-6 w-32 h-48 md:w-48 md:h-64 bg-gray-800 rounded-2xl object-cover border-2 border-white/20 shadow-2xl transition-all ${isVideoOff ? 'opacity-0' : 'opacity-100'}`}
+                        style={{ transform: 'scaleX(-1)' }} 
                     />
 
-                    {/* අනිත් කෙනා ආන්සර් කරනකන් පේන රූපය */}
                     {!callActive && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-10">
                             <div className="w-24 h-24 bg-blue-500/20 rounded-full flex items-center justify-center animate-pulse mb-4">
                                 <Video size={40} className="text-blue-400" />
                             </div>
@@ -233,7 +250,7 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
                     )}
 
                     {/* Control බටන් ටික */}
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-gray-900/80 px-8 py-4 rounded-full border border-white/10 backdrop-blur-md shadow-2xl">
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-gray-900/80 px-8 py-4 rounded-full border border-white/10 backdrop-blur-md shadow-2xl z-20">
                         <button 
                             onClick={toggleMute}
                             className={`p-4 rounded-full text-white transition-all ${isMuted ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}`}
