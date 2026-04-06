@@ -81,9 +81,11 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
             if (remoteVideoRef.current && event.streams && event.streams[0]) {
                 remoteVideoRef.current.srcObject = event.streams[0]
                 // සමහර බ්‍රව්සර් වලට play() එක explicitly කෝල් කරන්න ඕනේ
-                remoteVideoRef.current.play().catch(e => console.error("Error playing remote video:", e))
-            }
-        }
+                remoteVideoRef.current.onloadedmetadata = () => {
+            remoteVideoRef.current?.play().catch(e => console.error("Play error:", e));
+        };
+    }
+};
         
         return pc
     }
