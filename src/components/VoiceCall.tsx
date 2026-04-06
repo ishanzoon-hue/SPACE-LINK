@@ -12,6 +12,10 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
     const localAudioRef = useRef<HTMLAudioElement>(null)
     const remoteAudioRef = useRef<HTMLAudioElement>(null)
     
+    // 🎵 අලුත්: Ringtone සහ Dialtone ප්ලේ කරන්න Ref දෙකක්
+    const ringtoneRef = useRef<HTMLAudioElement>(null)
+    const dialtoneRef = useRef<HTMLAudioElement>(null)
+    
     const peerConnection = useRef<RTCPeerConnection | null>(null)
     const localStream = useRef<MediaStream | null>(null)
     
@@ -26,11 +30,21 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
 
                 if (data.type === 'offer' && data.sender !== callerId) {
                     setIsReceivingCall(true)
+                    
+                    // 🎵 කෝල් එකක් ආවම Ringtone එක ප්ලේ කරනවා
+                    if (ringtoneRef.current) {
+                        ringtoneRef.current.currentTime = 0
+                        ringtoneRef.current.play().catch(e => console.log("Autoplay blocked by browser", e))
+                    }
+
                     peerConnection.current = createPeerConnection()
                     await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.offer))
                 }
 
                 if (data.type === 'answer' && data.sender !== callerId) {
+                    // 🎵 අනිත් කෙනා ආන්සර් කරපු ගමන් අපේ Dialtone එක නවත්තනවා
+                    if (dialtoneRef.current) dialtoneRef.current.pause()
+
                     if (peerConnection.current) {
                         await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer))
                     }
@@ -95,6 +109,13 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
 
     const startCall = async () => {
         setIsCalling(true)
+        
+        // 🎵 අපි කෝල් එක ගද්දී Dialtone එක ප්ලේ කරනවා
+        if (dialtoneRef.current) {
+            dialtoneRef.current.currentTime = 0
+            dialtoneRef.current.play().catch(e => console.log("Autoplay blocked", e))
+        }
+
         const pc = createPeerConnection()
         peerConnection.current = pc
 
@@ -113,6 +134,9 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
     const acceptCall = async () => {
         setIsReceivingCall(false)
         setIsCalling(true)
+        
+        // 🎵 අපි කෝල් එක ආන්සර් කරපු ගමන් Ringtone එක නවත්තනවා
+        if (ringtoneRef.current) ringtoneRef.current.pause()
         
         if (!peerConnection.current) return
         const pc = peerConnection.current
@@ -139,6 +163,10 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
     }
 
     const cleanupCall = () => {
+        // 🎵 කෝල් එක කට් කරද්දී සද්ද දෙකම නවත්තනවා
+        if (ringtoneRef.current) ringtoneRef.current.pause()
+        if (dialtoneRef.current) dialtoneRef.current.pause()
+
         if (peerConnection.current) {
             peerConnection.current.close()
             peerConnection.current = null
@@ -163,6 +191,10 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
             {/* Audios (Hidden) */}
             <audio ref={localAudioRef} autoPlay muted playsInline className="hidden" />
             <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+            
+            {/* 🎵 අලුත්: Ringtone සහ Dialtone Audio Tags */}
+            <audio ref={ringtoneRef} src="/ringtone.mp3" loop className="hidden" />
+            <audio ref={dialtoneRef} src="/dialtone.mp3" loop className="hidden" />
 
             {/* Compact Call UI */}
             {isReceivingCall ? (
