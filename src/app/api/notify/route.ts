@@ -8,14 +8,19 @@ const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // For production, use SERVICE_ROLE_KEY here
 )
 
-webpush.setVapidDetails(
-    'mailto:test@example.com',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!
-)
-
 export async function POST(req: Request) {
     try {
+        // Initialize web-push inside the handler to prevent Vercel build-time errors
+        if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+            webpush.setVapidDetails(
+                'mailto:test@example.com',
+                process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+                process.env.VAPID_PRIVATE_KEY
+            )
+        } else {
+            console.warn("VAPID keys not configured!")
+        }
+
         const { receiverId, title, body, url } = await req.json()
 
         if (!receiverId || !title) {
