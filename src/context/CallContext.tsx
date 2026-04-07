@@ -109,20 +109,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     const getIceServers = () => {
         return [
+            { urls: 'stun:stun.relay.metered.ca:80' },
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
             {
-                urls: "turn:global.metered.ca:80",
+                urls: "turn:global.relay.metered.ca:80",
                 username: "635e95878dc1f8ed4c754e23",
                 credential: "svzy/u1LcpBxx1Zd",
             },
             {
-                urls: "turn:global.metered.ca:443",
+                urls: "turn:global.relay.metered.ca:443",
                 username: "635e95878dc1f8ed4c754e23",
                 credential: "svzy/u1LcpBxx1Zd",
             },
             {
-                urls: "turn:global.metered.ca:443?transport=tcp",
+                urls: "turn:global.relay.metered.ca:443?transport=tcp",
                 username: "635e95878dc1f8ed4c754e23",
                 credential: "svzy/u1LcpBxx1Zd",
             }
