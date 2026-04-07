@@ -9,6 +9,7 @@ import InboxSidebar from '@/components/InboxSidebar'
 import { Video, Image as ImageIcon, Smile, Send, ChevronLeft, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useCall } from '@/context/CallContext'
+import imageCompression from 'browser-image-compression'
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -117,11 +118,20 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     if (!file || !currentUser) return
 
     setUploading(true)
-    const fileExt = file.name.split('.').pop()
+
+    let finalFile = file;
+    try {
+        const options = { maxSizeMB: 1, maxWidthOrHeight: 1280, useWebWorker: true }
+        finalFile = await imageCompression(file, options)
+    } catch (e) {
+        console.error("Compression isolated error:", e)
+    }
+
+    const fileExt = finalFile.name.split('.').pop() || 'jpg'
     const fileName = `${Math.random()}.${fileExt}`
     const filePath = `${currentUser.id}/${fileName}`
 
-    const { error: uploadError } = await supabase.storage.from('chat-images').upload(filePath, file)
+    const { error: uploadError } = await supabase.storage.from('chat-images').upload(filePath, finalFile)
     if (uploadError) {
       alert("Upload failed: " + uploadError.message)
       setUploading(false)
@@ -156,6 +166,18 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       content: content,
       is_read: false
     })
+
+    // Subtly trigger Push Notification in background
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        receiverId: receiverId,
+        title: `New message from ${currentUser.user_metadata?.display_name || 'a friend'}`,
+        body: content.substring(0, 50) + (content.length > 50 ? '...' : ''),
+        url: `/chat/${currentUser.id}`
+      })
+    }).catch(e => console.error(e))
   }
 
   return (

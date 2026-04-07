@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { X, Save, Camera, Check, Palette, Loader2, MapPin, Briefcase, GraduationCap, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
+import imageCompression from 'browser-image-compression'
 
 export default function EditProfileModal({ profile }: { profile: any }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -49,15 +50,19 @@ export default function EditProfileModal({ profile }: { profile: any }) {
       let finalAvatarUrl = profile.avatar_url
 
       // Image Upload Logic
+      const compressOptions = { maxSizeMB: 1, maxWidthOrHeight: 1280, useWebWorker: true }
+
       if (coverFile) {
+        const compressedCover = await imageCompression(coverFile, compressOptions)
         const fileName = `cover-${profile.id}-${Date.now()}`
-        const { data } = await supabase.storage.from('avatars').upload(fileName, coverFile)
+        const { data } = await supabase.storage.from('avatars').upload(fileName, compressedCover)
         if (data) finalCoverUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl
       }
 
       if (avatarFile) {
+        const compressedAvatar = await imageCompression(avatarFile, compressOptions)
         const fileName = `avatar-${profile.id}-${Date.now()}`
-        const { data } = await supabase.storage.from('avatars').upload(fileName, avatarFile)
+        const { data } = await supabase.storage.from('avatars').upload(fileName, compressedAvatar)
         if (data) finalAvatarUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl
       }
 

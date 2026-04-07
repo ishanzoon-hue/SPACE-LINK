@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import FriendButton from '@/components/post/FriendButton'
 import EditProfileModal from './EditProfileModal'
+import ProfilePostsList from '@/components/post/ProfilePostsList'
 import OnlineFollowers from '@/components/post/OnlineFollowers'
 import AdSection from '@/components/AdSection'
 import { MapPin, Link as LinkIcon, Briefcase, GraduationCap, LayoutDashboard, Cake, FileText, Users, Image as ImageIcon, Sparkles, CalendarDays, Heart, BadgeCheck, Settings, Smartphone, Instagram, Twitter, Linkedin, Map } from 'lucide-react'
@@ -36,6 +37,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
         .select(`*, author:profiles!user_id(display_name, avatar_url), likes(id), comments(count)`)
         .eq('user_id', id)
         .order('created_at', { ascending: false })
+        .range(0, 9) // Fetch exactly 10 posts
 
     const isOwnProfile = currentUser?.id === id
 
@@ -203,18 +205,8 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                             </div>
                         </div>
 
-                        <div className="lg:col-span-6 space-y-6">
-                            {posts && posts.map((post) => (
-                                <PostCard key={post.id} post={post} currentUserId={currentUser?.id} themeColor={vibeColor} />
-                            ))}
-                            {posts?.length === 0 && (
-                                <div className="text-center py-16 bg-white dark:bg-[#0F172A] rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                                    <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <FileText className="text-gray-400" size={28} />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No posts yet</h3>
-                                </div>
-                            )}
+                        <div className="lg:col-span-6">
+                            <ProfilePostsList initialPosts={posts || []} userId={id} currentUserId={currentUser?.id} themeColor={vibeColor} />
                         </div>
 
                         <div className="lg:col-span-3 hidden lg:block relative z-0">

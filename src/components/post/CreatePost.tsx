@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import imageCompression from 'browser-image-compression'
 import { ImagePlus, Loader2, X, Send, Video } from 'lucide-react'
 
 interface CreatePostProps {
@@ -43,7 +44,15 @@ export default function CreatePost({ user }: CreatePostProps) {
             let imageUrl = null
 
             if (image) {
-                const fileExt = image.name.split('.').pop()
+                // Compress the image
+                const options = {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true
+                }
+                const compressedFile = await imageCompression(image, options)
+
+                const fileExt = image.name.split('.').pop() || 'jpg'
                 const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
                 
                 // ✅ Fix: user.Id -> user.id
@@ -51,7 +60,7 @@ export default function CreatePost({ user }: CreatePostProps) {
 
                 const { error: uploadError } = await supabase.storage
                     .from('posts')
-                    .upload(filePath, image)
+                    .upload(filePath, compressedFile)
 
                 if (uploadError) throw uploadError
 

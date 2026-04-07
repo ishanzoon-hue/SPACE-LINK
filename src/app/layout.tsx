@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { SettingsProvider } from "@/context/SettingsContext";
 import { NotificationProvider } from '@/context/NotificationContext'
 import { CallProvider } from '@/context/CallContext'
+import PushProvider from '@/components/PushProvider'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -93,8 +94,9 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <SettingsProvider>
-            <NotificationProvider>   {/* 👈 Add NotificationProvider here */}
+            <NotificationProvider>
               <CallProvider>
+                <PushProvider />
                 <Toaster position="bottom-right" reverseOrder={false} />
                 <Navbar />
 

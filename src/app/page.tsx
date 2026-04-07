@@ -5,7 +5,8 @@ import FollowingChart from '@/components/FollowingChart'
 import ReferralCard from '@/components/ReferralCard'
 import AdvertisementWidget from '@/components/AdvertisementWidget'
 import HomeHero from '@/components/HomeHero'
-import RewardBanner from '@/components/RewardBanner' // 🚀 1. මෙන්න Import එක ඇඩ් කරා
+import RewardBanner from '@/components/RewardBanner'
+import StoryTray from '@/components/stories/StoryTray'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -25,8 +26,9 @@ export default async function Home() {
 
         {/* 🚀 2. යූසර් ලොග් වෙලා ඉන්නවා නම් විතරක් Reward Banner එක පෙන්වනවා */}
         {user && (
-          <div className="mb-2">
+          <div className="mb-2 space-y-6">
             <RewardBanner />
+            <StoryTray />
           </div>
         )}
 

@@ -254,12 +254,24 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
-        // Ping the receiver
+        // Ping the receiver via Realtime
         supabase.channel(`notifications_${receiverId}`).send({
             type: 'broadcast',
             event: 'incoming_call',
             payload: { callerId: currentUserId, roomId, callType: type, offer }
         });
+
+        // Trigger Web Push Notification
+        fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                receiverId: receiverId,
+                title: `Incoming ${type} call 📞`,
+                body: `Tap here to open Space Link and answer.`,
+                url: `/`
+            })
+        }).catch(e => console.error(e));
     };
 
     const acceptCall = async () => {
