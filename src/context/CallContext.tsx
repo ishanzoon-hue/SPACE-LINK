@@ -56,6 +56,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     const dialtoneRef = useRef<HTMLAudioElement | null>(null);
     
     const pendingOfferRef = useRef<RTCSessionDescriptionInit | null>(null);
+    const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
+    const isPeerConnected = useRef<boolean>(false);
 
     useEffect(() => {
         const initUser = async () => {
@@ -149,12 +151,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const pc = new RTCPeerConnection({ iceServers: getIceServers() });
         
         pc.onicecandidate = (event) => {
-            if (event.candidate && sessionChannelRef.current) {
-                sessionChannelRef.current.send({
-                    type: 'broadcast',
-                    event: 'webrtc_signal',
-                    payload: { type: 'ice-candidate', candidate: event.candidate, sender: currentUserId }
-                });
+            if (event.candidate) {
+                if (isPeerConnected.current && sessionChannelRef.current) {
+                    sessionChannelRef.current.send({
+                        type: 'broadcast',
+                        event: 'webrtc_signal',
+                        payload: { type: 'ice-candidate', candidate: event.candidate, sender: currentUserId }
+                    });
+                } else {
+                    iceCandidateQueue.current.push(event.candidate);
+                }
             }
         };
 
@@ -186,6 +192,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     if (dialtoneRef.current) dialtoneRef.current.pause();
                     await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
                     setCallState(prev => ({ ...prev, status: 'active' }));
+                    
+                    // Now that peer answered, flush our queued candidates!
+                    isPeerConnected.current = true;
+                    iceCandidateQueue.current.forEach(candidate => {
+                        sessionChannelRef.current.send({
+                            type: 'broadcast',
+                            event: 'webrtc_signal',
+                            payload: { type: 'ice-candidate', candidate, sender: currentUserId }
+                        });
+                    });
+                    iceCandidateQueue.current = [];
                 }
 
                 if (data.type === 'ice-candidate' && pcRef.current) {
@@ -272,6 +289,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             event: 'webrtc_signal',
             payload: { type: 'answer', answer, sender: currentUserId }
         });
+
+        // The receiver knows caller is already subscribed, so flush candidates
+        isPeerConnected.current = true;
+        iceCandidateQueue.current.forEach(candidate => {
+            sessionChannelRef.current.send({
+                type: 'broadcast',
+                event: 'webrtc_signal',
+                payload: { type: 'ice-candidate', candidate, sender: currentUserId }
+            });
+        });
+        iceCandidateQueue.current = [];
     };
 
     const rejectCall = () => {
@@ -325,6 +353,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         
         setRemoteStream(null);
         pendingOfferRef.current = null;
+        iceCandidateQueue.current = [];
+        isPeerConnected.current = false;
         
         setCallState({ status: 'idle', type: null, roomId: null, peerId: null, peerProfile: null, isMuted: false, isVideoOff: false });
     };
