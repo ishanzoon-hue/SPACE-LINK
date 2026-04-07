@@ -8,12 +8,14 @@ import EmojiPicker, { Theme } from 'emoji-picker-react'
 import InboxSidebar from '@/components/InboxSidebar'
 import { Video, Image as ImageIcon, Smile, Send, ChevronLeft, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
+import { useCall } from '@/context/CallContext'
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const receiverId = resolvedParams.id
   const router = useRouter()
   const supabase = createClient()
+  const { startCall } = useCall()
 
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [receiver, setReceiver] = useState<any>(null)
@@ -106,16 +108,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   }
 
   const startVideoCall = async () => {
-    if (!currentUser) return
-
-    // Insert a call record so the other user gets a ringing notification
-    await supabase.from('calls').insert({
-      caller_id: currentUser.id,
-      receiver_id: receiverId,
-      status: 'ringing'
-    })
-
-    router.push(`/video-call/${receiverId}`)
+    if (!currentUser || !receiverId) return
+    startCall(receiverId, 'video')
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
