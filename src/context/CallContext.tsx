@@ -173,35 +173,41 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         return pc;
     };
 
-    const joinSessionChannel = (roomId: string) => {
-        if (sessionChannelRef.current) supabase.removeChannel(sessionChannelRef.current);
-        const channel = supabase.channel(`call_${roomId}`);
-        
-        channel.on('broadcast', { event: 'webrtc_signal' }, async (payload) => {
-            const data = payload.payload;
-            if (data.sender === currentUserId) return;
-
-            if (data.type === 'answer' && pcRef.current) {
-                if (dialtoneRef.current) dialtoneRef.current.pause();
-                await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-                setCallState(prev => ({ ...prev, status: 'active' }));
-            }
-
-            if (data.type === 'ice-candidate' && pcRef.current) {
-                await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-            }
-
-            if (data.type === 'end_call') {
-                cleanupCall();
-            }
+    const joinSessionChannel = (roomId: string): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            if (sessionChannelRef.current) supabase.removeChannel(sessionChannelRef.current);
+            const channel = supabase.channel(`call_${roomId}`);
             
-            if (data.type === 'reject_call') {
-                toast.error("Call Declined");
-                cleanupCall();
-            }
-        }).subscribe();
+            channel.on('broadcast', { event: 'webrtc_signal' }, async (payload) => {
+                const data = payload.payload;
+                if (data.sender === currentUserId) return;
 
-        sessionChannelRef.current = channel;
+                if (data.type === 'answer' && pcRef.current) {
+                    if (dialtoneRef.current) dialtoneRef.current.pause();
+                    await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    setCallState(prev => ({ ...prev, status: 'active' }));
+                }
+
+                if (data.type === 'ice-candidate' && pcRef.current) {
+                    await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+
+                if (data.type === 'end_call') {
+                    cleanupCall();
+                }
+                
+                if (data.type === 'reject_call') {
+                    toast.error("Call Declined");
+                    cleanupCall();
+                }
+            }).subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    resolve();
+                }
+            });
+
+            sessionChannelRef.current = channel;
+        });
     };
 
     const startCall = async (receiverId: string, type: CallType) => {
@@ -220,7 +226,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const pc = createPeerConnection(roomId);
         pcRef.current = pc;
         
-        joinSessionChannel(roomId);
+        await joinSessionChannel(roomId);
         
         const stream = await setupMedia(type, pc);
         if (!stream) {
@@ -248,7 +254,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const pc = createPeerConnection(callState.roomId);
         pcRef.current = pc;
         
-        joinSessionChannel(callState.roomId);
+        await joinSessionChannel(callState.roomId);
         
         await pc.setRemoteDescription(new RTCSessionDescription(pendingOfferRef.current));
         const stream = await setupMedia(callState.type, pc);
