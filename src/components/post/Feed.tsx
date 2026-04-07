@@ -11,7 +11,8 @@ export default async function Feed() {
         .select(`
       *,
       author:profiles!user_id(display_name, avatar_url),
-      likes(id),
+      likes(*),
+      shared_post:posts!shared_post_id(*, author:profiles!user_id(display_name, avatar_url)),
       comments(count)
     `)
         .order('created_at', { ascending: false })

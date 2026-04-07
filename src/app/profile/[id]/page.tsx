@@ -34,7 +34,7 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
     // 2. පෝස්ට් දත්ත ලබා ගැනීම
     const { data: posts } = await supabase
         .from('posts')
-        .select(`*, author:profiles!user_id(display_name, avatar_url), likes(id), comments(count)`)
+        .select(`*, author:profiles!user_id(display_name, avatar_url), likes(*), shared_post:posts!shared_post_id(*, author:profiles!user_id(display_name, avatar_url)), comments(count)`)
         .eq('user_id', id)
         .order('created_at', { ascending: false })
         .range(0, 9) // Fetch exactly 10 posts
