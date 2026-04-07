@@ -76,7 +76,9 @@ export default function Navbar() {
 
                                 {/* Desktop Icons */}
                                 <div className="hidden sm:flex items-center gap-0.5 sm:gap-1">
-                                    <NavIcon href="/" icon={<Home size={20} />} tooltip={t('common.home')} />
+                                    <div className="xl:hidden">
+                                        <NavIcon href="/" icon={<Home size={20} />} tooltip={t('common.home')} />
+                                    </div>
 
                                     <div className="relative group">
                                         <Link href="/live" className={`${iconBtnStyle} hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500`}>
@@ -88,12 +90,15 @@ export default function Navbar() {
                                     </div>
 
                                     <NavIcon href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} tooltip={t('common.leaderboard')} />
-                                    <NavIcon href="/explore" icon={<Hash size={20} className="text-emerald-500" />} tooltip="Explore" />
-                                    <NavIcon href="/marketplace" icon={<Store size={20} className="text-purple-500" />} tooltip="Marketplace" />
-                                    <NavIcon href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} tooltip={t('common.market')} />
-                                    <NavIcon href="/friends" icon={<Users size={20} className="text-blue-400" />} tooltip={t('common.friends')} />
-                                    <NavIcon href="/messages" icon={<MessageSquare size={20} />} tooltip={t('common.messages')} />
-                                    <NavIcon href={`/profile/${user.id}`} icon={<User size={20} />} tooltip={t('common.profile')} />
+                                    
+                                    <div className="xl:hidden flex items-center gap-0.5 sm:gap-1">
+                                        <NavIcon href="/explore" icon={<Hash size={20} className="text-emerald-500" />} tooltip="Explore" />
+                                        <NavIcon href="/marketplace" icon={<Store size={20} className="text-purple-500" />} tooltip="Marketplace" />
+                                        <NavIcon href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} tooltip={t('common.market')} />
+                                        <NavIcon href="/friends" icon={<Users size={20} className="text-blue-400" />} tooltip={t('common.friends')} />
+                                        <NavIcon href="/messages" icon={<MessageSquare size={20} />} tooltip={t('common.messages')} />
+                                        <NavIcon href={`/profile/${user.id}`} icon={<User size={20} />} tooltip={t('common.profile')} />
+                                    </div>
 
                                     <div className="relative group">
                                         <NotificationBell />

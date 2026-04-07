@@ -7,6 +7,10 @@ import AdvertisementWidget from '@/components/AdvertisementWidget'
 import HomeHero from '@/components/HomeHero'
 import RewardBanner from '@/components/RewardBanner'
 import StoryTray from '@/components/stories/StoryTray'
+import SidebarNav from '@/components/SidebarNav'
+import TrendingTags from '@/components/TrendingTags'
+import MarketplacePreview from '@/components/MarketplacePreview'
+import MarketPriceWidget from '@/components/MarketPriceWidget'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -19,14 +23,17 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
+    <div className="flex flex-col xl:flex-row gap-8 max-w-[1600px] mx-auto">
 
-      {/* ⬅️ MAIN COLUMN */}
-      <div className="flex-1 space-y-6">
+      {/* ⬅️ COLUMN 1: LEFT SIDEBAR (NAV) */}
+      <SidebarNav currentUserId={user?.id} />
 
-        {/* 🚀 2. යූසර් ලොග් වෙලා ඉන්නවා නම් විතරක් Reward Banner එක පෙන්වනවා */}
+      {/* 🛡️ COLUMN 2: MAIN FEED */}
+      <div className="flex-1 min-w-0 space-y-6">
+        
+        {/* 🚀 Rewards & Stories */}
         {user && (
-          <div className="mb-2 space-y-6">
+          <div className="space-y-6">
             <RewardBanner />
             <StoryTray />
           </div>
@@ -38,16 +45,24 @@ export default async function Home() {
         {/* 📈 Following Chart - Only show for logged-in users */}
         {user && <FollowingChart />}
 
-        {/* 📝 Feed (Server Side) */}
+        {/* 📝 Feed */}
         <Feed />
       </div>
 
-      {/* ➡️ RIGHT SIDEBAR */}
+      {/* ➡️ COLUMN 3: RIGHT SIDEBAR (WIDGETS) */}
       {user && (
-        <div className="hidden lg:flex flex-col gap-6 w-80 shrink-0 sticky top-24 h-fit">
-          <AdvertisementWidget isAdmin={isAdmin} />
+        <div className="hidden lg:flex flex-col gap-6 w-80 shrink-0 sticky top-24 h-fit pb-10">
+          {/* Market Watch (New) */}
+          <MarketPriceWidget />
 
-          {/* 🎁 Invite & Earn Card */}
+          {/* Trending Section (New) */}
+          <TrendingTags />
+
+          {/* Marketplace Preview (New) */}
+          <MarketplacePreview />
+
+          {/* Existing Widgets */}
+          <AdvertisementWidget isAdmin={isAdmin} />
           <ReferralCard userId={user.id} />
           <FollowingList currentUserId={user.id} />
         </div>

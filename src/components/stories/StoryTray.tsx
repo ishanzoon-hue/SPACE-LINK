@@ -65,15 +65,15 @@ export default function StoryTray() {
 
     return (
         <>
-            <div className="w-full bg-white dark:bg-[#0F172A] p-4 lg:p-5 rounded-[24px] lg:rounded-[32px] border border-gray-200 dark:border-gray-800 shadow-sm overflow-x-auto no-scrollbar flex items-center gap-4">
+            <div className="w-full bg-white/70 dark:bg-[#0F172A]/70 backdrop-blur-2xl p-4 lg:p-6 rounded-[32px] border border-white dark:border-gray-800 shadow-xl shadow-emerald-500/5 overflow-x-auto no-scrollbar flex items-center gap-5">
                 
                 {/* 1. Add Story Bubble (Static) */}
                 {currentUser && (
-                    <div className="flex flex-col items-center gap-2 shrink-0 cursor-pointer" onClick={() => setIsAddOpen(true)}>
-                        <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gray-100 dark:bg-gray-800 border-[3px] border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden hover:scale-105 transition">
-                            <Plus size={32} className="text-gray-400" />
+                    <div className="flex flex-col items-center gap-2 shrink-0 cursor-pointer group" onClick={() => setIsAddOpen(true)}>
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-emerald-500/50 flex items-center justify-center overflow-hidden hover:scale-105 transition-all duration-300 hover:border-emerald-500 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10">
+                            <Plus size={32} className="text-emerald-500 transition-transform group-hover:rotate-180 duration-500" />
                         </div>
-                        <span className="text-[11px] font-bold text-gray-500">Your Story</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-emerald-600/80">Add</span>
                     </div>
                 )}
 
@@ -96,13 +96,14 @@ export default function StoryTray() {
                         className="flex flex-col items-center gap-2 shrink-0 cursor-pointer group"
                         onClick={() => setViewingUserStories(group.stories)}
                     >
-                        {/* Avatar with Gradient Ring */}
-                        <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full p-[3px] bg-gradient-to-tr from-yellow-400 via-emerald-500 to-teal-500 group-hover:scale-105 transition-transform">
+                        {/* Avatar with Animated Gradient Glow */}
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[3px] bg-gradient-to-tr from-yellow-400 via-emerald-500 to-emerald-400 group-hover:scale-105 transition-all duration-500 shadow-lg shadow-emerald-500/20 active:scale-95">
+                            <div className="absolute inset-0 bg-emerald-400/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <div className="w-full h-full rounded-full border-[3px] border-white dark:border-[#0F172A] overflow-hidden bg-gray-100 dark:bg-gray-800 relative z-10">
                                 <img src={group.user.avatar_url || 'https://via.placeholder.com/150'} className="w-full h-full object-cover" />
                             </div>
                         </div>
-                        <span className="text-[11px] font-bold text-gray-800 dark:text-gray-200 truncate w-16 text-center">
+                        <span className="text-[11px] font-black text-gray-800 dark:text-gray-200 truncate w-20 text-center uppercase tracking-tighter opacity-80 decoration-emerald-500 group-hover:underline -mt-0.5">
                             {group.user.id === currentUser?.id ? 'You' : (group.user.display_name?.split(' ')[0] || 'User')}
                         </span>
                     </div>
