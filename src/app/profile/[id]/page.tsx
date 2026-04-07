@@ -112,37 +112,40 @@ export default async function ProfilePage({ params, searchParams }: { params: Pr
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-3 mb-6 shrink-0">
-                        {isOwnProfile ? (
-                            <div className="flex gap-3">
-                                <Link 
-                                    href="/dashboard"
-                                    className="text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:-translate-y-1 shadow-lg shadow-emerald-500/20" 
-                                    style={{ backgroundColor: vibeColor }}
-                                >
-                                    <LayoutDashboard size={20} /> Dashboard
-                                </Link>
-                                <Link
-                                    href="/settings"
-                                    className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-6 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2"
-                                >
-                                    <Settings size={20} /> Settings & Privacy
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-3">
-                                <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} />
-                                <Link href={`/chat/${id}`} className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-6 py-3 rounded-xl font-bold transition-all shadow-sm">
-                                    Message
-                                </Link>
-                                
-                                {/* 🚀 Voice Call Button එක මෙතනට දැම්මා */}
-                                {currentUser && <VoiceCall callerId={currentUser.id} receiverId={id} />}
-                                <VideoCall callerId={currentUser.id} receiverId={id} />
-                            </div>
-                        )}
+                    <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 mb-6 shrink-0 w-full md:w-auto">
+                        <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 w-full md:w-auto">
+                            {isOwnProfile ? (
+                                <>
+                                    <Link 
+                                        href="/dashboard"
+                                        className="text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all hover:-translate-y-1 shadow-lg shadow-emerald-500/20 whitespace-nowrap" 
+                                        style={{ backgroundColor: vibeColor }}
+                                    >
+                                        <LayoutDashboard size={20} /> Dashboard
+                                    </Link>
+                                    <Link
+                                        href="/settings"
+                                        className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-6 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 whitespace-nowrap"
+                                    >
+                                        <Settings size={20} /> Settings
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <FriendButton targetUserId={id} currentUserId={currentUser?.id || ''} />
+                                    <Link href={`/chat/${id}`} className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-4 py-3 rounded-xl font-bold transition-all shadow-sm whitespace-nowrap">
+                                        Message
+                                    </Link>
+                                    <div className="flex items-center gap-2">
+                                        {currentUser && <VoiceCall callerId={currentUser.id} receiverId={id} />}
+                                        <VideoCall callerId={currentUser.id} receiverId={id} />
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
+
 
                 {/* 📊 STATS BAR */}
                 <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto md:mx-0 mb-8 bg-white/50 dark:bg-[#0F172A]/80 backdrop-blur-md p-4 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-sm">

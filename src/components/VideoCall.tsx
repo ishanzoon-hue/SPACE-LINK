@@ -9,7 +9,7 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
     return (
         <button 
             onClick={() => startCall(receiverId, 'video')} 
-            className="bg-gray-200 dark:bg-gray-800 p-3 rounded-xl ml-2 hover:bg-blue-100 transition-colors"
+            className="bg-gray-200 dark:bg-gray-800 p-3 rounded-xl hover:bg-blue-100 transition-colors"
         >
             <Video size={20} className="text-blue-500" />
         </button>

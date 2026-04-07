@@ -9,7 +9,7 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
     return (
         <button 
             onClick={() => startCall(receiverId, 'voice')} 
-            className="bg-gray-200 dark:bg-gray-800 p-3 rounded-xl ml-2 hover:bg-emerald-100 transition-colors"
+            className="bg-gray-200 dark:bg-gray-800 p-3 rounded-xl hover:bg-emerald-100 transition-colors"
         >
             <Phone size={20} className="text-emerald-500" />
         </button>

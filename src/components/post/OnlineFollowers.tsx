@@ -10,6 +10,24 @@ export default function OnlineFollowers({ currentUserId }: { currentUserId: stri
     const supabase = createClient()
 
     useEffect(() => {
+        const fetchProfiles = async () => {
+            if (onlineUsers.length === 0) return;
+            const idsToFetch = onlineUsers.filter(u => !u.display_name).map(u => u.id);
+            if (idsToFetch.length === 0) return;
+
+            const { data, error } = await supabase.from('profiles').select('id, display_name, avatar_url').in('id', idsToFetch);
+            if (data && !error && data.length > 0) {
+                setOnlineUsers(prev => prev.map(ou => {
+                    const profileData = data.find(p => p.id === ou.id);
+                    return profileData ? { ...ou, ...profileData } : ou;
+                }));
+            }
+        };
+
+        fetchProfiles();
+    }, [onlineUsers, supabase]);
+
+    useEffect(() => {
         if (!currentUserId) return
 
         // 1. Realtime Channel එකක් හදනවා
@@ -66,16 +84,19 @@ export default function OnlineFollowers({ currentUserId }: { currentUserId: stri
                         >
                             <div className="relative">
                                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                                    {/* මෙතනට Profile පින්තූරය ගන්න ඕනේ */}
-                                    <span className="text-sm font-bold text-blue-600">
-                                        {user.id?.charAt(0).toUpperCase()}
-                                    </span>
+                                    {user.avatar_url ? (
+                                        <Image src={user.avatar_url} alt="avatar" fill className="object-cover" unoptimized />
+                                    ) : (
+                                        <span className="text-sm font-bold text-blue-600">
+                                            {(user.display_name || user.id || 'U').charAt(0).toUpperCase()}
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-[#0F172A] rounded-full"></div>
                             </div>
                             <div className="flex-1 overflow-hidden">
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-500">
-                                    User {user.id?.slice(0, 5)}...
+                                    {user.display_name || `User ${user.id?.slice(0, 5)}...`}
                                 </p>
                             </div>
                         </Link>
