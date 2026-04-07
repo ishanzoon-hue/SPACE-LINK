@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { Video, VideoOff, PhoneOff, Mic, MicOff } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
+import { useSearchParams } from 'next/navigation'
 
-export default function VideoCall({ callerId, receiverId }: { callerId: string, receiverId: string }) {
+function VideoCallContent({ callerId, receiverId }: { callerId: string, receiverId: string }) {
     const [isCalling, setIsCalling] = useState(false)
     const [isReceivingCall, setIsReceivingCall] = useState(false)
     const [isMuted, setIsMuted] = useState(false)
@@ -20,8 +21,22 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
     const localStream = useRef<MediaStream | null>(null)
     
     const supabase = createClient()
+    const searchParams = useSearchParams()
+    const shouldAccept = searchParams.get('accept') === 'true'
+    const callType = searchParams.get('type')
+
     const roomName = `video_call_${[callerId, receiverId].sort().join('_')}` 
     const channel = useRef(supabase.channel(roomName))
+
+    // 🚀 Auto-Answer Logic
+    useEffect(() => {
+        if (shouldAccept && callType === 'video' && !callActive && !isCalling) {
+            const timer = setTimeout(() => {
+                acceptCall()
+            }, 1500)
+            return () => clearTimeout(timer)
+        }
+    }, [shouldAccept, callType])
 
     useEffect(() => {
         channel.current
@@ -64,11 +79,8 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
             iceServers: [
-                // STUN servers
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                
-                // 🚀 Metered TURN Servers (ඩුබායි Firewall එකෙන් බේරෙන්න)
                 {
                     urls: "turn:global.metered.ca:80",
                     username: "635e95878dc1f8ed4c754e23",
@@ -118,25 +130,19 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
             localStream.current = stream
-            
             if (localVideoRef.current) {
                 localVideoRef.current.srcObject = stream
-                localVideoRef.current.play().catch(e => console.error("Error playing local video:", e))
+                localVideoRef.current.play().catch(e => console.error(e))
             }
-            
             stream.getTracks().forEach((track) => pc.addTrack(track, stream))
         } catch (error) {
-            console.error("Error accessing camera/mic:", error)
-            alert("කැමරාවට හෝ මයික් එකට permission දෙන්න!")
+            console.error(error)
         }
     }
 
     const startCall = async () => {
         setIsCalling(true)
-        if (dialtoneRef.current) {
-            dialtoneRef.current.currentTime = 0
-            dialtoneRef.current.play().catch(e => console.log(e))
-        }
+        if (dialtoneRef.current) dialtoneRef.current.play().catch(e => console.log(e))
         const pc = createPeerConnection()
         peerConnection.current = pc
         await setupMedia(pc)
@@ -155,8 +161,8 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
         setCallActive(true)
         if (ringtoneRef.current) ringtoneRef.current.pause()
         
-        if (!peerConnection.current) return
-        const pc = peerConnection.current
+        const pc = peerConnection.current || createPeerConnection()
+        peerConnection.current = pc
         await setupMedia(pc)
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
@@ -179,42 +185,24 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
     const cleanupCall = () => {
         if (ringtoneRef.current) ringtoneRef.current.pause()
         if (dialtoneRef.current) dialtoneRef.current.pause()
-        if (peerConnection.current) {
-            peerConnection.current.close()
-            peerConnection.current = null
-        }
-        if (localStream.current) {
-            localStream.current.getTracks().forEach(track => track.stop())
-            localStream.current = null
-        }
-        
-        if (localVideoRef.current) localVideoRef.current.srcObject = null
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
-
+        if (peerConnection.current) peerConnection.current.close()
+        if (localStream.current) localStream.current.getTracks().forEach(track => track.stop())
         setIsCalling(false)
         setIsReceivingCall(false)
         setCallActive(false)
-        setIsMuted(false)
-        setIsVideoOff(false)
     }
 
     const toggleMute = () => {
         if (localStream.current) {
-            const audioTrack = localStream.current.getAudioTracks()[0]
-            if (audioTrack) {
-                audioTrack.enabled = !isMuted
-                setIsMuted(!isMuted)
-            }
+            localStream.current.getAudioTracks()[0].enabled = !isMuted
+            setIsMuted(!isMuted)
         }
     }
 
     const toggleVideo = () => {
         if (localStream.current) {
-            const videoTrack = localStream.current.getVideoTracks()[0]
-            if (videoTrack) {
-                videoTrack.enabled = !isVideoOff
-                setIsVideoOff(!isVideoOff)
-            }
+            localStream.current.getVideoTracks()[0].enabled = !isVideoOff
+            setIsVideoOff(!isVideoOff)
         }
     }
 
@@ -224,76 +212,35 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
             <audio ref={dialtoneRef} src="/dialtone.mp3" loop className="hidden" />
 
             {!isCalling && !isReceivingCall && (
-                <button 
-                    onClick={startCall}
-                    title="Video Call"
-                    className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-4 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center ml-2"
-                >
+                <button onClick={startCall} className="bg-gray-200 dark:bg-gray-800 p-3 rounded-xl ml-2">
                     <Video size={20} className="text-blue-500" />
                 </button>
             )}
 
             {isReceivingCall && (
-                <button 
-                    onClick={acceptCall}
-                    className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-xl text-white font-bold transition-all shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse ml-2"
-                >
-                    <Video size={18} /> Answer Video
+                <button onClick={acceptCall} className="bg-blue-500 p-3 rounded-xl text-white ml-2 animate-pulse">
+                    Answer Video
                 </button>
             )}
 
             {isCalling && (
                 <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
+                    <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    <video ref={localVideoRef} autoPlay muted playsInline className={`absolute bottom-28 right-6 w-32 h-48 bg-gray-800 rounded-2xl object-cover border-2 border-white/20 ${isVideoOff ? 'opacity-0' : 'opacity-100'}`} style={{ transform: 'scaleX(-1)' }} />
                     
-                    <video 
-                        ref={remoteVideoRef} 
-                        autoPlay 
-                        playsInline 
-                        className="w-full h-full object-cover"
-                    />
+                    {!callActive && <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white font-bold">CALLING...</div>}
 
-                    <video 
-                        ref={localVideoRef} 
-                        autoPlay 
-                        muted 
-                        playsInline 
-                        className={`absolute bottom-28 right-6 w-32 h-48 md:w-48 md:h-64 bg-gray-800 rounded-2xl object-cover border-2 border-white/20 shadow-2xl transition-all ${isVideoOff ? 'opacity-0' : 'opacity-100'}`}
-                        style={{ transform: 'scaleX(-1)' }} 
-                    />
-
-                    {!callActive && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-10">
-                            <div className="w-24 h-24 bg-blue-500/20 rounded-full flex items-center justify-center animate-pulse mb-4">
-                                <Video size={40} className="text-blue-400" />
-                            </div>
-                            <h2 className="text-white text-2xl font-bold tracking-widest">CALLING...</h2>
-                        </div>
-                    )}
-
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-gray-900/80 px-8 py-4 rounded-full border border-white/10 backdrop-blur-md shadow-2xl z-20">
-                        <button 
-                            onClick={toggleMute}
-                            className={`p-4 rounded-full text-white transition-all ${isMuted ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}`}
-                        >
-                            {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-                        </button>
-
-                        <button 
-                            onClick={endCall}
-                            className="bg-red-500 hover:bg-red-600 p-5 rounded-full text-white transition-all shadow-[0_0_20px_rgba(239,68,68,0.5)] transform hover:scale-110"
-                        >
-                            <PhoneOff size={28} />
-                        </button>
-
-                        <button 
-                            onClick={toggleVideo}
-                            className={`p-4 rounded-full text-white transition-all ${isVideoOff ? 'bg-orange-500 hover:bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}`}
-                        >
-                            {isVideoOff ? <VideoOff size={24} /> : <Video size={24} />}
-                        </button>
+                    <div className="absolute bottom-8 flex gap-6 bg-gray-900/80 p-4 rounded-full">
+                        <button onClick={toggleMute} className="p-4 bg-gray-700 rounded-full text-white">{isMuted ? <MicOff /> : <Mic />}</button>
+                        <button onClick={endCall} className="p-4 bg-red-500 rounded-full text-white"><PhoneOff /></button>
+                        <button onClick={toggleVideo} className="p-4 bg-gray-700 rounded-full text-white">{isVideoOff ? <VideoOff /> : <Video />}</button>
                     </div>
                 </div>
             )}
         </div>
     )
+}
+
+export default function VideoCall(props: any) {
+    return <Suspense><VideoCallContent {...props} /></Suspense>
 }
