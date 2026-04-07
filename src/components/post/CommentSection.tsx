@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
 import { Trash2, Loader2, Edit2, X, Check, MoreHorizontal } from 'lucide-react'
+import RichText from '@/components/RichText'
 
 export default function CommentSection({
     postId,
@@ -239,7 +240,9 @@ export default function CommentSection({
                                             </div>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-spl-black dark:text-gray-300 mt-1 whitespace-pre-wrap">{comment.content}</p>
+                                        <p className="text-sm text-spl-black dark:text-gray-300 mt-1 whitespace-pre-wrap">
+                                            <RichText content={comment.content} />
+                                        </p>
                                     )}
 
                                     {/* --- අලුතින් එකතු කරපු Like Button එක --- */}

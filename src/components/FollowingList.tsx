@@ -51,7 +51,7 @@ export default function FollowingList({ currentUserId }: { currentUserId: string
                     {t('home.suggested')}
                 </h3>
 
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-5 max-h-[350px] overflow-y-auto pr-1 no-scrollbar">
                     {users.length > 0 ? (
                         users.map((user) => (
                             <div key={user.id} className="flex items-center justify-between group">

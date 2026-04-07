@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import CommentSection from './CommentSection'
+import RichText from '@/components/RichText'
 
 const REACTIONS = [
     { type: 'like', icon: '👍', color: '#10b981' },
@@ -192,7 +193,11 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981', 
             </div>
 
             <div className="mb-4">
-                {post.content && <p className="text-gray-800 dark:text-gray-200 text-[15px] md:text-lg leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>}
+                {post.content && (
+                    <p className="text-gray-800 dark:text-gray-200 text-[15px] md:text-lg leading-relaxed mb-4">
+                        <RichText content={post.content} />
+                    </p>
+                )}
                 
                 {post.image_url && (
                     <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-4 max-h-[600px] flex items-center justify-center bg-black/5">

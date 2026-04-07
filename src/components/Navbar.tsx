@@ -7,7 +7,7 @@ import ThemeToggle from './ThemeToggle'
 import SignOutButton from './SignOutButton'
 import NotificationBell from './NotificationBell'
 import SettingsToggle from './SettingsToggle'
-import { Home, MessageSquare, User, TrendingUp, Trophy, Radio, Coins, Users, Store } from 'lucide-react'
+import { Home, MessageSquare, User, TrendingUp, Trophy, Radio, Coins, Users, Store, Hash } from 'lucide-react'
 import MobileMenu from './MobileMenu'
 import LanguageSwitcher from './LanguageSwitcher'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -88,6 +88,7 @@ export default function Navbar() {
                                     </div>
 
                                     <NavIcon href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} tooltip={t('common.leaderboard')} />
+                                    <NavIcon href="/explore" icon={<Hash size={20} className="text-emerald-500" />} tooltip="Explore" />
                                     <NavIcon href="/marketplace" icon={<Store size={20} className="text-purple-500" />} tooltip="Marketplace" />
                                     <NavIcon href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} tooltip={t('common.market')} />
                                     <NavIcon href="/friends" icon={<Users size={20} className="text-blue-400" />} tooltip={t('common.friends')} />
