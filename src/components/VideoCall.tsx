@@ -63,7 +63,33 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
 
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }]
+            iceServers: [
+                // STUN servers
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                
+                // 🚀 Metered TURN Servers (ඩුබායි Firewall එකෙන් බේරෙන්න)
+                {
+                    urls: "turn:global.metered.ca:80",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                },
+                {
+                    urls: "turn:global.metered.ca:443",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                },
+                {
+                    urls: "turn:global.metered.ca:443?transport=tcp",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                },
+                {
+                    urls: "turns:global.metered.ca:443",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                }
+            ]
         })
         
         pc.onicecandidate = (event) => {
@@ -76,29 +102,25 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
             }
         }
         
-        // 🚀 වෙනස මෙතනයි: Remote Video එක ආවම හරියටම ප්ලේ වෙන්න හදලා තියෙන්නේ
         pc.ontrack = (event) => {
             if (remoteVideoRef.current && event.streams && event.streams[0]) {
                 remoteVideoRef.current.srcObject = event.streams[0]
-                // සමහර බ්‍රව්සර් වලට play() එක explicitly කෝල් කරන්න ඕනේ
                 remoteVideoRef.current.onloadedmetadata = () => {
-            remoteVideoRef.current?.play().catch(e => console.error("Play error:", e));
+                    remoteVideoRef.current?.play().catch(e => console.error("Play error:", e));
+                };
+            }
         };
-    }
-};
         
         return pc
     }
 
     const setupMedia = async (pc: RTCPeerConnection) => {
         try {
-            // 🚀 කැමරාව සහ මයික් එක ඉල්ලනවා
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
             localStream.current = stream
             
             if (localVideoRef.current) {
                 localVideoRef.current.srcObject = stream
-                // අපේ කැමරාවත් හරියටම ප්ලේ වෙන්න
                 localVideoRef.current.play().catch(e => console.error("Error playing local video:", e))
             }
             
@@ -166,7 +188,6 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
             localStream.current = null
         }
         
-        // 🚀 වීඩියෝ ටැග් වල තියෙන stream එක අයින් කරනවා
         if (localVideoRef.current) localVideoRef.current.srcObject = null
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
 
@@ -224,7 +245,6 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
             {isCalling && (
                 <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center">
                     
-                    {/* අනිත් කෙනාගේ වීඩියෝ එක */}
                     <video 
                         ref={remoteVideoRef} 
                         autoPlay 
@@ -232,7 +252,6 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
                         className="w-full h-full object-cover"
                     />
 
-                    {/* අපේ වීඩියෝ එක (කැඩපතක් වගේ පේන්න transform: scaleX(-1) දාලා තියෙනවා) */}
                     <video 
                         ref={localVideoRef} 
                         autoPlay 
@@ -251,7 +270,6 @@ export default function VideoCall({ callerId, receiverId }: { callerId: string, 
                         </div>
                     )}
 
-                    {/* Control බටන් ටික */}
                     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-gray-900/80 px-8 py-4 rounded-full border border-white/10 backdrop-blur-md shadow-2xl z-20">
                         <button 
                             onClick={toggleMute}

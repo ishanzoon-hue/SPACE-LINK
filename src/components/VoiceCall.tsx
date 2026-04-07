@@ -12,7 +12,6 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
     const localAudioRef = useRef<HTMLAudioElement>(null)
     const remoteAudioRef = useRef<HTMLAudioElement>(null)
     
-    // 🎵 අලුත්: Ringtone සහ Dialtone ප්ලේ කරන්න Ref දෙකක්
     const ringtoneRef = useRef<HTMLAudioElement>(null)
     const dialtoneRef = useRef<HTMLAudioElement>(null)
     
@@ -31,10 +30,9 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
                 if (data.type === 'offer' && data.sender !== callerId) {
                     setIsReceivingCall(true)
                     
-                    // 🎵 කෝල් එකක් ආවම Ringtone එක ප්ලේ කරනවා
                     if (ringtoneRef.current) {
                         ringtoneRef.current.currentTime = 0
-                        ringtoneRef.current.play().catch(e => console.log("Autoplay blocked by browser", e))
+                        ringtoneRef.current.play().catch(e => console.log("Autoplay blocked", e))
                     }
 
                     peerConnection.current = createPeerConnection()
@@ -42,7 +40,6 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
                 }
 
                 if (data.type === 'answer' && data.sender !== callerId) {
-                    // 🎵 අනිත් කෙනා ආන්සර් කරපු ගමන් අපේ Dialtone එක නවත්තනවා
                     if (dialtoneRef.current) dialtoneRef.current.pause()
 
                     if (peerConnection.current) {
@@ -71,7 +68,29 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
         const pc = new RTCPeerConnection({
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
+                { urls: 'stun:stun1.l.google.com:19302' },
+                
+                // 🚀 Metered TURN Servers (ඩුබායි ISP blocks බයිපාස් කරන්න)
+                {
+                    urls: "turn:global.metered.ca:80",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                },
+                {
+                    urls: "turn:global.metered.ca:443",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                },
+                {
+                    urls: "turn:global.metered.ca:443?transport=tcp",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                },
+                {
+                    urls: "turns:global.metered.ca:443",
+                    username: "635e95878dc1f8ed4c754e23",
+                    credential: "svzy/u1LcpBxx1Zd",
+                }
             ]
         })
 
@@ -95,22 +114,26 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
     }
 
     const setupMicrophone = async (pc: RTCPeerConnection) => {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        localStream.current = stream
-        
-        if (localAudioRef.current) {
-            localAudioRef.current.srcObject = stream
-        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            localStream.current = stream
+            
+            if (localAudioRef.current) {
+                localAudioRef.current.srcObject = stream
+            }
 
-        stream.getTracks().forEach((track) => {
-            pc.addTrack(track, stream)
-        })
+            stream.getTracks().forEach((track) => {
+                pc.addTrack(track, stream)
+            })
+        } catch (error) {
+            console.error("Mic access error:", error)
+            alert("Microphone permission එක දෙන්න!")
+        }
     }
 
     const startCall = async () => {
         setIsCalling(true)
         
-        // 🎵 අපි කෝල් එක ගද්දී Dialtone එක ප්ලේ කරනවා
         if (dialtoneRef.current) {
             dialtoneRef.current.currentTime = 0
             dialtoneRef.current.play().catch(e => console.log("Autoplay blocked", e))
@@ -135,7 +158,6 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
         setIsReceivingCall(false)
         setIsCalling(true)
         
-        // 🎵 අපි කෝල් එක ආන්සර් කරපු ගමන් Ringtone එක නවත්තනවා
         if (ringtoneRef.current) ringtoneRef.current.pause()
         
         if (!peerConnection.current) return
@@ -163,7 +185,6 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
     }
 
     const cleanupCall = () => {
-        // 🎵 කෝල් එක කට් කරද්දී සද්ද දෙකම නවත්තනවා
         if (ringtoneRef.current) ringtoneRef.current.pause()
         if (dialtoneRef.current) dialtoneRef.current.pause()
 
@@ -188,15 +209,12 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
 
     return (
         <div className="flex items-center">
-            {/* Audios (Hidden) */}
             <audio ref={localAudioRef} autoPlay muted playsInline className="hidden" />
             <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
             
-            {/* 🎵 අලුත්: Ringtone සහ Dialtone Audio Tags */}
             <audio ref={ringtoneRef} src="/ringtone.mp3" loop className="hidden" />
             <audio ref={dialtoneRef} src="/dialtone.mp3" loop className="hidden" />
 
-            {/* Compact Call UI */}
             {isReceivingCall ? (
                 <button 
                     onClick={acceptCall}
@@ -208,12 +226,12 @@ export default function VoiceCall({ callerId, receiverId }: { callerId: string, 
                 <button 
                     onClick={startCall}
                     title="Voice Call"
-                    className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-4 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center"
+                    className="bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-700 px-4 py-3 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center ml-2"
                 >
                     <Phone size={20} className="text-emerald-500" />
                 </button>
             ) : (
-                <div className="flex items-center gap-2 bg-gray-200 dark:bg-gray-800 p-1.5 rounded-xl">
+                <div className="flex items-center gap-2 bg-gray-200 dark:bg-gray-800 p-1.5 rounded-xl ml-2">
                     <span className="px-3 text-xs text-emerald-500 font-bold animate-pulse">On Call</span>
                     <button 
                         onClick={toggleMute}
