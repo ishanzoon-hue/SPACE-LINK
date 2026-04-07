@@ -200,8 +200,8 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981', 
                 )}
                 
                 {post.image_url && (
-                    <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-4 max-h-[600px] flex items-center justify-center bg-black/5">
-                        <img src={post.image_url} alt="post" className="max-w-full max-h-[600px] object-contain" />
+                    <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-4 bg-black/5">
+                        <img src={post.image_url} alt="post" className="w-full h-auto max-h-[800px] object-cover" />
                     </div>
                 )}
                 {embedUrl && (

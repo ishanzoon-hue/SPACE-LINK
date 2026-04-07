@@ -27,7 +27,7 @@ export default async function Feed() {
     } = await supabase.auth.getUser()
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
             {user && <CreatePost user={user} />}
 
             <div className="space-y-4">
