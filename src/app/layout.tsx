@@ -100,8 +100,8 @@ export default function RootLayout({
                 <Toaster position="bottom-right" reverseOrder={false} />
                 <Navbar />
 
-                {/* Mobile-optimized main container */}
-                <main className="w-full max-w-md mx-auto px-4 sm:px-6 md:max-w-2xl lg:max-w-4xl pt-4 pb-20">
+                {/* Full-width main container */}
+                <main className="w-full pt-4 pb-20 px-2 lg:px-4">
                   {children}
                 </main>
               </CallProvider>
