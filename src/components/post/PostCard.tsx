@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import CommentSection from './CommentSection'
 import RichText from '@/components/RichText'
+import ImagePreviewModal from './ImagePreviewModal'
 
 const REACTIONS = [
     { type: 'like', icon: '👍', color: '#10b981' },
@@ -48,6 +49,7 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981', 
     const [showShareOptions, setShowShareOptions] = useState(false)
     const [showReactionBar, setShowReactionBar] = useState(false)
     const [topReactionIcon, setTopReactionIcon] = useState('❤️')
+    const [previewImage, setPreviewImage] = useState<string | null>(null)
 
     const embedUrl = post?.video_url ? getEmbedUrl(post.video_url) : null;
 
@@ -157,11 +159,26 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981', 
 
     return (
         <div className={`bg-white dark:bg-[#0F172A] p-6 transition-all mb-5 relative group ${isNested ? 'rounded-2xl border border-gray-100 dark:border-gray-800' : 'rounded-[32px] shadow-sm border border-gray-100 dark:border-gray-800'}`}>
+            
+            {/* 📸 Image Preview Modal */}
+            {previewImage && (
+                <ImagePreviewModal 
+                    imageUrl={previewImage} 
+                    onClose={() => setPreviewImage(null)} 
+                />
+            )}
+
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <Link href={`/profile/${post.user_id}`}>
-                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2" style={{ borderColor: themeColor }}>
-                            <img src={post.author?.avatar_url || '/default-avatar.png'} alt="avatar" className="w-full h-full object-cover" />
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 flex items-center justify-center bg-emerald-500/10" style={{ borderColor: themeColor }}>
+                            {post.author?.avatar_url ? (
+                                <img src={post.author.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="font-black text-emerald-600 text-lg">
+                                    {(post.author?.display_name || 'U').charAt(0).toUpperCase()}
+                                </span>
+                            )}
                         </div>
                     </Link>
                     <div>
@@ -169,7 +186,11 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981', 
                             <h4 className="font-bold text-gray-900 dark:text-white hover:underline">{post.author?.display_name}</h4>
                         </Link>
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter opacity-60" suppressHydrationWarning={true}>
-                            {new Date(post.created_at).toLocaleDateString()} {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {(() => {
+                                const date = new Date(post.created_at);
+                                if (isNaN(date.getTime())) return 'Recently';
+                                return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                            })()}
                         </p>
                     </div>
                 </div>
@@ -200,10 +221,14 @@ export default function PostCard({ post, currentUserId, themeColor = '#10b981', 
                 )}
                 
                 {post.image_url && (
-                    <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-4 bg-black/5">
-                        <img src={post.image_url} alt="post" className="w-full h-auto max-h-[800px] object-cover" />
+                    <div 
+                        className="rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 mb-4 bg-black/5 cursor-zoom-in"
+                        onClick={() => setPreviewImage(post.image_url)}
+                    >
+                        <img src={post.image_url} alt="post" className="w-full h-auto max-h-[800px] object-cover hover:scale-105 transition-transform duration-500" />
                     </div>
                 )}
+
                 {embedUrl && (
                     <div className="mt-4 w-full aspect-video rounded-2xl overflow-hidden relative shadow-lg">
                         <iframe src={embedUrl} className="absolute top-0 left-0 w-full h-full" frameBorder="0" allowFullScreen></iframe>

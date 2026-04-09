@@ -6,8 +6,13 @@ import Link from 'next/link'
 import { ShoppingBag, ArrowRight, Tag } from 'lucide-react'
 
 export default function MarketplacePreview() {
-    const [items, setItems] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const fallbackItems = [
+        { id: 'f1', title: 'LMO Token Bundle', price_lmo: 250, image_url: null },
+        { id: 'f2', title: 'Premium Badge', price_lmo: 100, image_url: null },
+        { id: 'f3', title: 'Space Pass NFT', price_lmo: 500, image_url: null },
+    ]
+    const [items, setItems] = useState<any[]>(fallbackItems)
+    const [loading, setLoading] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
@@ -19,7 +24,7 @@ export default function MarketplacePreview() {
                 .order('created_at', { ascending: false })
                 .limit(3)
 
-            if (!error && data) {
+            if (!error && data && data.length > 0) {
                 setItems(data)
             }
             setLoading(false)
@@ -28,7 +33,8 @@ export default function MarketplacePreview() {
         fetchItems()
     }, [])
 
-    if (!loading && items.length === 0) return null
+    // Always use items (already has fallback as default state)
+    const displayItems = items
 
     return (
         <div className="bg-white dark:bg-[#0F172A] p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
@@ -54,7 +60,7 @@ export default function MarketplacePreview() {
                         </div>
                     ))
                 ) : (
-                    items.map((item) => (
+                    displayItems.map((item) => (
                         <Link 
                             key={item.id} 
                             href="/marketplace"

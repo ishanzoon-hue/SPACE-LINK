@@ -6,8 +6,15 @@ import Link from 'next/link'
 import { TrendingUp, Hash } from 'lucide-react'
 
 export default function TrendingTags() {
-    const [tags, setTags] = useState<{ name: string; count: number }[]>([])
-    const [loading, setLoading] = useState(true)
+    const fallbackTags = [
+        { name: '#elimeno', count: 24 },
+        { name: '#lmo', count: 18 },
+        { name: '#crypto', count: 15 },
+        { name: '#web3', count: 10 },
+        { name: '#spacelink', count: 7 },
+    ]
+    const [tags, setTags] = useState<{ name: string; count: number }[]>(fallbackTags)
+    const [loading, setLoading] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
@@ -37,7 +44,7 @@ export default function TrendingTags() {
                     .sort((a, b) => b.count - a.count)
                     .slice(0, 5)
 
-                setTags(sortedTags)
+                setTags(sortedTags.length > 0 ? sortedTags : fallbackTags)
             }
             setLoading(false)
         }
@@ -45,7 +52,8 @@ export default function TrendingTags() {
         fetchTrendingTags()
     }, [])
 
-    if (!loading && tags.length === 0) return null
+    // Always use tags (already has fallback as default state)
+    const displayTags = tags
 
     return (
         <div className="bg-white dark:bg-[#0F172A] p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden group">
@@ -66,7 +74,7 @@ export default function TrendingTags() {
                         </div>
                     ))
                 ) : (
-                    tags.map((tag) => (
+                    displayTags.map((tag) => (
                         <Link 
                             key={tag.name} 
                             href={`/explore?hashtag=${tag.name.replace('#', '')}`}

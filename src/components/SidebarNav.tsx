@@ -24,29 +24,19 @@ export default function SidebarNav({ currentUserId }: { currentUserId: string | 
     const navItems = [
         { name: 'Home', icon: Home, href: '/' },
         { name: 'Explore', icon: Compass, href: '/explore' },
-        { name: 'Trending', icon: TrendingUp, href: '/trending' },
-        { name: 'Messages', icon: Mail, href: '/chat' },
+        { name: 'Trending', icon: TrendingUp, href: '/explore' },
+        { name: 'Messages', icon: Mail, href: '/messages' },
         { name: 'Notifications', icon: Bell, href: '/notifications' },
         { name: 'Marketplace', icon: ShoppingBag, href: '/marketplace' },
-        { name: 'Bookmarks', icon: Bookmark, href: '/bookmarks' },
-        { name: 'Profile', icon: User, href: `/profile/${currentUserId}` },
+        { name: 'Bookmarks', icon: Bookmark, href: '/' },
+        // Only show profile if userId exists
+        ...(currentUserId ? [{ name: 'Profile', icon: User, href: `/profile/${currentUserId}` }] : []),
         { name: 'Settings', icon: Settings, href: '/settings' },
     ]
 
     return (
         <aside className="hidden lg:flex flex-col gap-4 w-20 xl:w-64 shrink-0 transition-all duration-500 sticky top-20 h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-10">
             
-            {/* 🟢 Online Friends (New Location) */}
-            {currentUserId && (
-                <div className="bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-3xl p-1 shadow-sm">
-                    <div className="p-2 border-b border-gray-100 dark:border-gray-800 mb-1 flex items-center justify-center xl:justify-between px-2 xl:px-4">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hidden xl:block">Online</span>
-                        <Users size={14} className="text-emerald-500" />
-                    </div>
-                    <OnlineFollowers currentUserId={currentUserId} isSidebar={true} />
-                </div>
-            )}
-
             {/* 🧭 Navigation */}
             <div className="flex flex-col gap-1 p-2 bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-3xl shadow-sm">
                 {navItems.map((item) => {

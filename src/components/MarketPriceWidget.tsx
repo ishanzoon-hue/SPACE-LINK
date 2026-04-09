@@ -11,7 +11,7 @@ export default function MarketPriceWidget() {
     ])
 
     return (
-        <div className="bg-gradient-to-br from-gray-900 to-slate-900 p-5 rounded-3xl border border-gray-800 shadow-xl relative overflow-hidden group">
+        <div className="bg-gradient-to-br from-gray-900 to-slate-900 p-7 rounded-3xl border border-gray-800 shadow-xl relative overflow-hidden group min-h-[460px]">
             {/* Animated Background Pulse */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[100px] animate-pulse"></div>
             
@@ -30,7 +30,7 @@ export default function MarketPriceWidget() {
                 {prices.map((coin) => (
                     <div key={coin.symbol} className="flex items-center justify-between group/coin">
                         <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-xl bg-gray-800 flex items-center justify-center font-black text-xs ${coin.color.replace('text-', 'text-opacity-80 ')} border border-gray-700 transition-transform group-hover/coin:scale-110`}>
+                            <div className={`w-9 h-9 rounded-xl bg-gray-800 flex items-center justify-center font-black text-xs ${coin.color.replace('text-', 'text-opacity-80 ')} border border-gray-700 transition-transform group-hover/coin:scale-110`}>
                                 {coin.symbol.charAt(0)}
                             </div>
                             <div>
@@ -44,14 +44,27 @@ export default function MarketPriceWidget() {
                                 {coin.isUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                                 {coin.change}
                             </div>
+                            {/* Mini bar */}
+                            <div className="mt-1 h-1 w-16 bg-gray-800 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${coin.isUp ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{ width: coin.isUp ? '65%' : '35%' }}></div>
+                            </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            <button className="mt-5 w-full bg-white/5 hover:bg-white/10 text-gray-400 py-2.5 rounded-2xl text-[11px] font-bold transition-all border border-white/5 hover:border-white/10 uppercase tracking-widest">
+            <button className="mt-6 w-full bg-white/5 hover:bg-white/10 text-gray-400 py-3 rounded-2xl text-[11px] font-bold transition-all border border-white/5 hover:border-white/10 uppercase tracking-widest">
                 Trade Now
             </button>
+
+            {/* Live Ticker Strip */}
+            <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Last updated</span>
+                <span className="text-[10px] text-emerald-500 font-black flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block"></span>
+                    Live
+                </span>
+            </div>
         </div>
     )
 }

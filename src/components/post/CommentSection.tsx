@@ -168,11 +168,13 @@ export default function CommentSection({
                     ) : (
                         comments.map(comment => (
                             <div key={comment.id} className="group flex space-x-3 bg-spl-gray dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 p-3 rounded-lg relative">
-                                <div className="w-8 h-8 rounded-full bg-spl-blue bg-opacity-10 flex items-center justify-center text-spl-blue font-bold overflow-hidden relative shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 font-bold overflow-hidden relative shrink-0 border border-emerald-500/20">
                                     {comment.author?.avatar_url ? (
                                         <Image src={comment.author.avatar_url} alt="avatar" fill className="object-cover" unoptimized={true} />
                                     ) : (
-                                        comment.author?.display_name?.charAt(0).toUpperCase() || 'U'
+                                        <span className="text-xs">
+                                            {(comment.author?.display_name || 'U').charAt(0).toUpperCase()}
+                                        </span>
                                     )}
                                 </div>
                                 <div className="flex-1">

@@ -66,11 +66,16 @@ export default function OnlineFollowers({ currentUserId, isSidebar = false }: { 
     }, [currentUserId])
 
     return (
-        <div className={`${isSidebar ? '' : 'bg-white dark:bg-[#0F172A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm sticky top-20'}`}>
+        <div className={`${isSidebar ? '' : 'bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-3xl p-5 shadow-sm'}`}>
             {!isSidebar && (
-                <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    Online Friends ({onlineUsers.length})
+                <h3 className="font-bold text-gray-800 dark:text-white mb-5 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm uppercase tracking-widest opacity-70">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        Online Friends
+                    </div>
+                    <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[10px] font-black">
+                        {onlineUsers.length}
+                    </span>
                 </h3>
             )}
 
