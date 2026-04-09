@@ -13,8 +13,10 @@ import {
     Settings, 
     PlusCircle,
     Bookmark,
-    TrendingUp
+    TrendingUp,
+    Users
 } from 'lucide-react'
+import OnlineFollowers from './post/OnlineFollowers'
 
 export default function SidebarNav({ currentUserId }: { currentUserId: string | undefined }) {
     const pathname = usePathname()
@@ -32,7 +34,20 @@ export default function SidebarNav({ currentUserId }: { currentUserId: string | 
     ]
 
     return (
-        <aside className="hidden xl:flex flex-col gap-2 w-20 2xl:w-64 shrink-0 transition-all duration-500 sticky top-24 h-[calc(100vh-120px)] overflow-y-auto no-scrollbar pb-10">
+        <aside className="hidden lg:flex flex-col gap-4 w-20 xl:w-64 shrink-0 transition-all duration-500 sticky top-20 h-[calc(100vh-100px)] overflow-y-auto no-scrollbar pb-10">
+            
+            {/* 🟢 Online Friends (New Location) */}
+            {currentUserId && (
+                <div className="bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-3xl p-1 shadow-sm">
+                    <div className="p-2 border-b border-gray-100 dark:border-gray-800 mb-1 flex items-center justify-center xl:justify-between px-2 xl:px-4">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hidden xl:block">Online</span>
+                        <Users size={14} className="text-emerald-500" />
+                    </div>
+                    <OnlineFollowers currentUserId={currentUserId} isSidebar={true} />
+                </div>
+            )}
+
+            {/* 🧭 Navigation */}
             <div className="flex flex-col gap-1 p-2 bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-3xl shadow-sm">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href
@@ -40,26 +55,26 @@ export default function SidebarNav({ currentUserId }: { currentUserId: string | 
                         <Link 
                             key={item.href} 
                             href={item.href}
-                            className={`flex items-center gap-4 px-3.5 py-3.5 2xl:px-4 rounded-2xl transition-all group relative overflow-hidden justify-center 2xl:justify-start ${
+                            className={`flex items-center gap-4 px-3.5 py-3 xl:px-4 rounded-2xl transition-all group relative overflow-hidden justify-center xl:justify-start ${
                                 isActive 
                                 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
                                 : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-emerald-500'
                             }`}
                         >
-                            <item.icon size={22} className={`shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : ''}`} />
-                            <span className="font-bold tracking-wide hidden 2xl:block">{item.name}</span>
+                            <item.icon size={20} className={`shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : ''}`} />
+                            <span className="font-bold text-sm tracking-wide hidden xl:block">{item.name}</span>
                             
                             {isActive && (
-                                <div className="absolute right-0 top-1.5 bottom-1.5 w-1 bg-white/30 rounded-l-full hidden 2xl:block" />
+                                <div className="absolute right-0 top-1.5 bottom-1.5 w-1 bg-white/30 rounded-l-full hidden xl:block" />
                             )}
                         </Link>
                     )
                 })}
             </div>
 
-            <button className="mt-4 w-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white p-4 h-16 2xl:h-auto rounded-2xl font-black text-lg shadow-xl shadow-emerald-500/30 hover:opacity-90 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 active:scale-95 group/btn">
-                <PlusCircle size={24} className="shrink-0 transition-transform group-hover/btn:rotate-90" />
-                <span className="hidden 2xl:block">Create Post</span>
+            <button className="w-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white p-4 h-16 xl:h-auto rounded-2xl font-black text-base shadow-xl shadow-emerald-500/30 hover:opacity-90 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3 active:scale-95 group/btn">
+                <PlusCircle size={22} className="shrink-0 transition-transform group-hover/btn:rotate-90" />
+                <span className="hidden xl:block">Post</span>
             </button>
 
             {/* Premium Link Mini Banner */}

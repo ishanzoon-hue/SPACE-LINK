@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 import Image from 'next/image'
 
-export default function OnlineFollowers({ currentUserId }: { currentUserId: string }) {
+export default function OnlineFollowers({ currentUserId, isSidebar = false }: { currentUserId: string; isSidebar?: boolean }) {
     const [onlineUsers, setOnlineUsers] = useState<any[]>([])
     const supabase = createClient()
 
@@ -66,36 +66,39 @@ export default function OnlineFollowers({ currentUserId }: { currentUserId: stri
     }, [currentUserId])
 
     return (
-        <div className="bg-white dark:bg-[#0F172A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm sticky top-20">
-            <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                Online Friends ({onlineUsers.length})
-            </h3>
+        <div className={`${isSidebar ? '' : 'bg-white dark:bg-[#0F172A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm sticky top-20'}`}>
+            {!isSidebar && (
+                <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Online Friends ({onlineUsers.length})
+                </h3>
+            )}
 
-            <div className="space-y-3">
+            <div className={`${isSidebar ? 'flex flex-col items-center 2xl:items-stretch gap-1' : 'space-y-3'}`}>
                 {onlineUsers.length === 0 ? (
-                    <p className="text-xs text-gray-500">No one is online right now.</p>
+                    !isSidebar && <p className="text-xs text-gray-500">No one is online right now.</p>
                 ) : (
                     onlineUsers.map((user: any) => (
                         <Link
                             key={user.id}
-                            href={`/profile/${user.id}`} // ප්‍රොෆයිල් එකට යන ලින්ක් එක
-                            className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all group"
+                            href={`/profile/${user.id}`}
+                            className={`flex items-center gap-3 p-2 hover:bg-white/10 dark:hover:bg-gray-800/50 rounded-xl transition-all group ${isSidebar ? 'justify-center 2xl:justify-start' : ''}`}
+                            title={user.display_name}
                         >
-                            <div className="relative">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
+                            <div className="relative shrink-0">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
                                     {user.avatar_url ? (
-                                        <Image src={user.avatar_url} alt="avatar" fill className="object-cover" unoptimized />
+                                        <Image src={user.avatar_url} alt="avatar" width={40} height={40} className="object-cover" unoptimized />
                                     ) : (
-                                        <span className="text-sm font-bold text-blue-600">
+                                        <span className="text-sm font-bold text-emerald-600">
                                             {(user.display_name || user.id || 'U').charAt(0).toUpperCase()}
                                         </span>
                                     )}
                                 </div>
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-[#0F172A] rounded-full"></div>
                             </div>
-                            <div className="flex-1 overflow-hidden">
-                                <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate group-hover:text-blue-500">
+                            <div className={`flex-1 overflow-hidden ${isSidebar ? 'hidden xl:block' : ''}`}>
+                                <p className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate group-hover:text-emerald-500 transition-colors">
                                     {user.display_name || `User ${user.id?.slice(0, 5)}...`}
                                 </p>
                             </div>

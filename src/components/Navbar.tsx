@@ -76,7 +76,7 @@ export default function Navbar() {
 
                                 {/* Desktop Icons */}
                                 <div className="hidden sm:flex items-center gap-0.5 sm:gap-1">
-                                    <div className="xl:hidden">
+                                    <div className="lg:hidden">
                                         <NavIcon href="/" icon={<Home size={20} />} tooltip={t('common.home')} />
                                     </div>
 
@@ -91,7 +91,7 @@ export default function Navbar() {
 
                                     <NavIcon href="/leaderboard" icon={<Trophy size={20} className="text-yellow-500" />} tooltip={t('common.leaderboard')} />
                                     
-                                    <div className="xl:hidden flex items-center gap-0.5 sm:gap-1">
+                                    <div className="lg:hidden flex items-center gap-0.5 sm:gap-1">
                                         <NavIcon href="/explore" icon={<Hash size={20} className="text-emerald-500" />} tooltip="Explore" />
                                         <NavIcon href="/marketplace" icon={<Store size={20} className="text-purple-500" />} tooltip="Marketplace" />
                                         <NavIcon href="/market" icon={<TrendingUp size={20} className="text-blue-500" />} tooltip={t('common.market')} />

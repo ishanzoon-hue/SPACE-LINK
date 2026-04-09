@@ -23,9 +23,9 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex flex-col xl:flex-row gap-4 2xl:gap-8 max-w-[2000px] mx-auto px-4">
+    <div className="flex flex-col lg:flex-row gap-4 xl:gap-6 w-full mx-auto px-2 lg:px-4">
 
-      {/* ⬅️ COLUMN 1: LEFT SIDEBAR (NAV) */}
+      {/* ⬅️ COLUMN 1: LEFT SIDEBAR (NAV & FRIENDS) */}
       <SidebarNav currentUserId={user?.id} />
 
       {/* 🛡️ COLUMN 2: MAIN FEED */}
@@ -51,7 +51,7 @@ export default async function Home() {
 
       {/* ➡️ COLUMN 3: RIGHT SIDEBAR (WIDGETS) */}
       {user && (
-        <div className="hidden lg:flex flex-col gap-6 w-full xl:w-72 2xl:w-80 shrink-0 sticky top-24 h-fit pb-10">
+        <div className="hidden lg:flex flex-col gap-6 w-full lg:w-64 xl:w-72 2xl:w-80 shrink-0 sticky top-20 h-fit pb-10">
           {/* Market Watch (New) */}
           <MarketPriceWidget />
 
