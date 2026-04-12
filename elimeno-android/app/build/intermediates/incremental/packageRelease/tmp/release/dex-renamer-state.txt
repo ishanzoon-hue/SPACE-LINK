@@ -1,0 +1,4 @@
+#Fri Apr 10 22:53:28 GST 2026
+base.0=C\:\\Users\\DELL BUSTAN\\SPACE LINK\\space-link\\elimeno-android\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

@@ -8,12 +8,13 @@ import { Hash, Search } from 'lucide-react'
 export default async function ExplorePage({
     searchParams
 }: {
-    searchParams: { hashtag?: string, user?: string }
+    searchParams: Promise<{ hashtag?: string, user?: string }>
 }) {
     const supabase = await createClient()
+    const params = await searchParams
 
-    const hashtag = searchParams.hashtag
-    const userQuery = searchParams.user
+    const hashtag = params.hashtag
+    const userQuery = params.user
 
     let posts: any[] = []
     let users: any[] = []
@@ -91,8 +92,11 @@ export default async function ExplorePage({
                         ) : (
                             users.map((u) => (
                                 <Link key={u.id} href={`/profile/${u.id}`} className="bg-white dark:bg-[#0F172A] p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center gap-4 hover:border-blue-500 transition-colors group">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200">
-                                        <img src={u.avatar_url || '/default-avatar.png'} alt={u.display_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    <div className="w-16 h-16 rounded-full overflow-hidden bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                                        {u.avatar_url 
+                                            ? <img src={u.avatar_url} alt={u.display_name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                            : <span className="text-2xl font-black text-emerald-600">{(u.display_name || 'U').charAt(0).toUpperCase()}</span>
+                                        }
                                     </div>
                                     <div>
                                         <p className="font-bold text-lg">{u.display_name}</p>

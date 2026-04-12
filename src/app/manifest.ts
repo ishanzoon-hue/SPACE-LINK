@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Space Link',
-    short_name: 'SpaceLink',
-    description: 'Social Media Platform',
+    name: 'Elimeno',
+    short_name: 'Elimeno',
+    description: 'Premium Social Discovery & Command Center',
     start_url: '/',
     display: 'standalone', 
     background_color: '#0F172A',
